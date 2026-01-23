@@ -5,7 +5,7 @@ const tokenStore = require('./tokens');
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.readonly',
   'https://www.googleapis.com/auth/calendar.readonly',
-  'https://www.googleapis.com/auth/drive.metadata.readonly'
+  'https://www.googleapis.com/auth/drive.activity.readonly'
 ];
 
 function createOAuth2Client() {
@@ -144,40 +144,114 @@ async function getDocActivity(date) {
   const auth = getAuthenticatedClient();
   if (!auth) throw new Error('Google not authenticated');
 
-  const drive = google.drive({ version: 'v3', auth });
-
   const startOfDay = new Date(date);
   startOfDay.setHours(0, 0, 0, 0);
 
   const endOfDay = new Date(date);
   endOfDay.setHours(23, 59, 59, 999);
 
+  const dateStr = startOfDay.toISOString().split('T')[0];
+
   try {
-    // Query for files modified by me on this date
-    const response = await drive.files.list({
-      q: `modifiedByMeTime >= "${startOfDay.toISOString()}" and modifiedByMeTime <= "${endOfDay.toISOString()}" and mimeType != "application/vnd.google-apps.folder"`,
-      fields: 'files(id, name, mimeType, modifiedByMeTime, viewedByMeTime, createdTime)',
-      orderBy: 'modifiedByMeTime desc',
-      pageSize: 100
+    const driveActivity = google.driveactivity({ version: 'v2', auth });
+
+    // Fetch all activity pages for this date
+    let allActivities = [];
+    let pageToken = null;
+
+    console.log(`[Drive Activity] Fetching activity for ${dateStr}`);
+    console.log(`[Drive Activity] Filter: time >= "${startOfDay.toISOString()}" AND time <= "${endOfDay.toISOString()}"`);
+
+    do {
+      const response = await driveActivity.activity.query({
+        requestBody: {
+          filter: `time >= "${startOfDay.toISOString()}" AND time <= "${endOfDay.toISOString()}"`,
+          consolidationStrategy: { none: {} },
+          pageSize: 100,
+          pageToken
+        }
+      });
+
+      allActivities = allActivities.concat(response.data.activities || []);
+      pageToken = response.data.nextPageToken;
+      console.log(`[Drive Activity] Fetched page with ${response.data.activities?.length || 0} activities, hasMore: ${!!pageToken}`);
+    } while (pageToken);
+
+    console.log(`[Drive Activity] Total activities fetched: ${allActivities.length}`);
+
+    // Log all action types we're seeing
+    const actionTypeCounts = {};
+    for (const activity of allActivities) {
+      const action = activity.primaryActionDetail || {};
+      const type = Object.keys(action)[0] || 'unknown';
+      actionTypeCounts[type] = (actionTypeCounts[type] || 0) + 1;
+    }
+    console.log(`[Drive Activity] Action types found:`, actionTypeCounts);
+
+    const docEdits = [];
+
+    for (const activity of allActivities) {
+      const action = activity.primaryActionDetail;
+      if (!action) {
+        console.log(`[Drive Activity] Skipping activity with no primaryActionDetail`);
+        continue;
+      }
+
+      // Capture all meaningful action types
+      const actionType = action.edit ? 'edit' :
+                        action.comment ? 'comment' :
+                        action.create ? 'create' :
+                        action.delete ? 'delete' :
+                        action.rename ? 'rename' :
+                        action.move ? 'move' : null;
+
+      if (!actionType) {
+        console.log(`[Drive Activity] Skipping unhandled action type:`, Object.keys(action));
+        continue;
+      }
+
+      // Get target info - check all targets, not just first
+      for (const target of activity.targets || []) {
+        if (!target?.driveItem) continue;
+
+        const driveItem = target.driveItem;
+
+        // Skip folders
+        if (driveItem.mimeType?.includes('folder')) {
+          console.log(`[Drive Activity] Skipping folder: ${driveItem.title}`);
+          continue;
+        }
+
+        const timestamp = activity.timestamp;
+        if (!timestamp) continue;
+
+        const hour = new Date(timestamp).getHours();
+        console.log(`[Drive Activity] Found: ${actionType} on "${driveItem.title}" at hour ${hour} (${driveItem.mimeType || 'unknown type'})`);
+
+        docEdits.push({
+          source: 'docs',
+          type: actionType,
+          title: driveItem.title || 'Untitled',
+          docId: driveItem.name?.replace('items/', ''),
+          timestamp: new Date(timestamp)
+        });
+      }
+    }
+
+    console.log(`[Drive Activity] Total doc edits before dedupe: ${docEdits.length}`);
+
+    // Dedupe by doc title + hour (same doc can appear in multiple hours)
+    const seen = new Set();
+    const result = docEdits.filter(edit => {
+      const hour = edit.timestamp.getHours();
+      const key = `${edit.title}-${hour}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
     });
 
-    const files = response.data.files || [];
-
-    return files.map(file => {
-      // Determine if this was likely a create or edit
-      const modifiedTime = new Date(file.modifiedByMeTime);
-      const createdTime = new Date(file.createdTime);
-      const isCreate = Math.abs(modifiedTime - createdTime) < 60000; // Within 1 minute
-
-      return {
-        source: 'docs',
-        type: isCreate ? 'create' : 'edit',
-        title: file.name || 'Untitled',
-        docId: file.id,
-        mimeType: file.mimeType,
-        timestamp: modifiedTime
-      };
-    });
+    console.log(`[Drive Activity] Final result after dedupe: ${result.length} entries`);
+    return result;
   } catch (error) {
     console.error('Error fetching doc activity:', error.message);
     return [];

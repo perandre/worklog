@@ -54,7 +54,7 @@ Open http://localhost:3000 in your browser.
 2. Search and enable:
    - **Gmail API**
    - **Google Calendar API**
-   - **Google Drive API**
+   - **Drive Activity API**
 
 ### Step 3: Configure OAuth Consent Screen
 
@@ -67,7 +67,7 @@ Open http://localhost:3000 in your browser.
 4. Add scopes:
    - `https://www.googleapis.com/auth/gmail.readonly`
    - `https://www.googleapis.com/auth/calendar.readonly`
-   - `https://www.googleapis.com/auth/drive.metadata.readonly`
+   - `https://www.googleapis.com/auth/drive.activity.readonly`
 5. Add yourself as a test user
 
 ### Step 4: Create OAuth Credentials

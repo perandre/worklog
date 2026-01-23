@@ -578,7 +578,7 @@
       html += `<div class="day-header ${isToday ? 'today' : ''}">${formatDate(currentDate)}</div>`;
       html += '<div class="timeline">';
 
-      for (let hour = 8; hour < 16; hour++) {
+      for (let hour = 7; hour < 18; hour++) {
         const hourData = data.hours[hour] || { primary: null, communications: [], keywords: [], projects: [] };
         const isEmpty = !hourData.primary && hourData.communications.length === 0;
 
@@ -604,7 +604,7 @@
             `;
           }
 
-          const commsToShow = hourData.communications.slice(0, 3);
+          const commsToShow = hourData.communications.slice(0, 6);
           for (const comm of commsToShow) {
             html += createActivityHtml(comm);
           }
@@ -633,7 +633,7 @@
         // Timeline for this day
         html += '<div class="timeline">';
 
-        for (let hour = 8; hour < 16; hour++) {
+        for (let hour = 7; hour < 18; hour++) {
           const hourData = data.hours[hour] || { primary: null, communications: [], keywords: [], projects: [] };
           const isEmpty = !hourData.primary && hourData.communications.length === 0;
 
@@ -661,7 +661,7 @@
             }
 
             // Communications (show max 2 in week view)
-            const commsToShow = hourData.communications.slice(0, 2);
+            const commsToShow = hourData.communications.slice(0, 4);
             for (const comm of commsToShow) {
               html += createActivityHtml(comm);
             }

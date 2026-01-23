@@ -7,7 +7,7 @@ const { extractKeywords, detectProjectNames } = require('./keywords');
  * @param {number} endHour - Work day end hour (default 16)
  * @returns {Object} Activities grouped by hour
  */
-function bucketByHour(activities, startHour = 8, endHour = 16) {
+function bucketByHour(activities, startHour = 7, endHour = 18) {
   const buckets = {};
 
   // Initialize empty buckets for work hours
@@ -148,7 +148,7 @@ function mergeHourActivities(hourActivities) {
  * @param {number} endHour - Work day end hour
  * @returns {Object} Processed hourly data
  */
-function processActivities(activities, startHour = 8, endHour = 16) {
+function processActivities(activities, startHour = 7, endHour = 18) {
   const buckets = bucketByHour(activities, startHour, endHour);
   const processed = {};
 
