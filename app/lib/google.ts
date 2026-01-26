@@ -220,7 +220,8 @@ export async function getDocActivity(accessToken: string, date: string, timezone
       console.log("[Drive] Debug sample:", JSON.stringify(sample, null, 2))
       console.log(`[Drive] Debug filter: ${filter}`)
     }
-    const results: any[] = []
+    const rawResults: any[] = []
+    const filteredResults: any[] = []
 
     for (const activity of activities) {
       const hasActors = Array.isArray(activity.actors) && activity.actors.length > 0
@@ -228,16 +229,12 @@ export async function getDocActivity(accessToken: string, date: string, timezone
         const knownUser = actor.user?.knownUser
         return knownUser?.isCurrentUser === true || (myPeopleId && knownUser?.personName === myPeopleId)
       })
-      if (hasActors && !isCurrentUser) continue
+      const includeByActor = !hasActors || isCurrentUser === true
 
       const timestampRaw =
         activity.timestamp || activity.timeRange?.endTime || activity.timeRange?.startTime
       if (!timestampRaw) continue
       const timestamp = new Date(timestampRaw)
-
-      // Filter by date (in user's timezone)
-      const activityDate = timestamp.toLocaleDateString("en-CA", { timeZone: timezone })
-      if (activityDate !== date) continue
 
       const actionDetail = activity.primaryActionDetail || activity.actions?.[0]?.detail
       const actionType = getActionType(actionDetail)
@@ -247,14 +244,23 @@ export async function getDocActivity(accessToken: string, date: string, timezone
         if (!driveItem) continue
         if (driveItem.mimeType?.includes("folder")) continue
 
-        results.push({
+        const entry = {
           source: "docs" as const,
           type: actionType,
           title: driveItem.title || "Untitled",
           docId: driveItem.name?.replace("items/", "") || "",
           timestamp,
-        })
+        }
+        rawResults.push(entry)
+        if (includeByActor) {
+          filteredResults.push(entry)
+        }
       }
+    }
+
+    const results = filteredResults.length > 0 ? filteredResults : rawResults
+    if (filteredResults.length === 0 && rawResults.length > 0) {
+      console.warn("[Drive] Actor filter removed all results; returning unfiltered activity list.")
     }
 
     // Dedupe by doc + action + hour
