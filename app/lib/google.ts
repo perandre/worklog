@@ -96,38 +96,55 @@ export async function getEmails(accessToken: string, date: string) {
 }
 
 export async function getDocActivity(accessToken: string, date: string, timezone = "UTC", userEmail?: string) {
-  console.log(`[Drive] Fetching for ${date}`)
+  console.log(`[Drive] Fetching activity for ${date}`)
   try {
     const auth = getAuthClient(accessToken)
-    const drive = google.drive({ version: "v3", auth })
+    const driveActivity = google.driveactivity({ version: "v2", auth })
 
-    // Get files modified on this date
+    // Wide date range to cover timezones
     const startOfDay = new Date(`${date}T00:00:00.000Z`)
     startOfDay.setUTCHours(startOfDay.getUTCHours() - 14)
     const endOfDay = new Date(`${date}T23:59:59.999Z`)
     endOfDay.setUTCHours(endOfDay.getUTCHours() + 14)
 
-    const response = await drive.files.list({
-      q: `modifiedTime >= '${startOfDay.toISOString()}' and modifiedTime <= '${endOfDay.toISOString()}' and mimeType != 'application/vnd.google-apps.folder'`,
-      fields: "files(id, name, modifiedTime, modifiedByMeTime, mimeType)",
-      orderBy: "modifiedTime desc",
-      pageSize: 100,
+    const response = await driveActivity.activity.query({
+      requestBody: {
+        filter: `time >= "${startOfDay.toISOString()}" AND time <= "${endOfDay.toISOString()}"`,
+        consolidationStrategy: { none: {} },
+        pageSize: 100,
+      },
     })
 
-    const files = response.data.files || []
-    console.log(`[Drive] Found ${files.length} files total`)
+    const activities = response.data.activities || []
+    console.log(`[Drive] API returned ${activities.length} activities`)
 
-    // Filter to files the user modified (not just viewed)
-    const myEdits = files.filter((file) => file.modifiedByMeTime)
-    console.log(`[Drive] Found ${myEdits.length} files modified by me`)
+    const docEdits: any[] = []
 
-    return myEdits.map((file) => ({
-      source: "docs" as const,
-      type: "edit" as const,
-      title: file.name || "Untitled",
-      docId: file.id,
-      timestamp: new Date(file.modifiedByMeTime || file.modifiedTime || ""),
-    }))
+    for (const activity of activities) {
+      // Only include edits/creates/comments (skip views, permissions, etc)
+      const action = activity.primaryActionDetail
+      if (!action?.edit && !action?.create && !action?.comment) continue
+
+      // Skip folders
+      const target = activity.targets?.[0]?.driveItem
+      if (!target || target.mimeType?.includes("folder")) continue
+
+      // Skip if no timestamp
+      if (!activity.timestamp) continue
+
+      const actionType = action.edit ? "edit" : action.create ? "create" : "comment"
+
+      docEdits.push({
+        source: "docs" as const,
+        type: actionType,
+        title: target.title || "Untitled",
+        docId: target.name?.replace("items/", ""),
+        timestamp: new Date(activity.timestamp),
+      })
+    }
+
+    console.log(`[Drive] Returning ${docEdits.length} doc activities`)
+    return docEdits
   } catch (error: any) {
     console.error("[Drive] Error:", error?.message)
     return []
