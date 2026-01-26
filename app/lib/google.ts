@@ -117,14 +117,14 @@ export async function getDocActivity(accessToken: string, date: string, timezone
     const activities = response.data.activities || []
     console.log(`[Drive] API returned ${activities.length} activities`)
 
-    // Log first few actors to understand structure
+    // Log full actor details
     if (activities.length > 0) {
-      const samples = activities.slice(0, 5).map((a: any) => ({
+      const samples = activities.slice(0, 3).map((a: any) => ({
         title: a.targets?.[0]?.driveItem?.title,
-        actors: a.actors,
-        isCurrentUser: a.actors?.some((actor: any) => actor.user?.knownUser?.isCurrentUser),
+        actorsFull: JSON.stringify(a.actors),
       }))
-      console.log(`[Drive] Actor samples:`, JSON.stringify(samples))
+      console.log(`[Drive] Actor details:`, JSON.stringify(samples))
+      console.log(`[Drive] Looking for user: ${userEmail}`)
     }
 
     const docEdits: any[] = []
