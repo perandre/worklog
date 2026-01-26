@@ -108,21 +108,25 @@ export async function getDocActivity(accessToken: string, date: string, timezone
     endOfDay.setUTCHours(endOfDay.getUTCHours() + 14)
 
     const response = await drive.files.list({
-      q: `modifiedTime >= '${startOfDay.toISOString()}' and modifiedTime <= '${endOfDay.toISOString()}' and mimeType != 'application/vnd.google-apps.folder' and 'me' in owners`,
-      fields: "files(id, name, modifiedTime, mimeType)",
+      q: `modifiedTime >= '${startOfDay.toISOString()}' and modifiedTime <= '${endOfDay.toISOString()}' and mimeType != 'application/vnd.google-apps.folder'`,
+      fields: "files(id, name, modifiedTime, modifiedByMeTime, mimeType)",
       orderBy: "modifiedTime desc",
-      pageSize: 50,
+      pageSize: 100,
     })
 
     const files = response.data.files || []
-    console.log(`[Drive] Found ${files.length} files`)
+    console.log(`[Drive] Found ${files.length} files total`)
 
-    return files.map((file) => ({
+    // Filter to files the user modified (not just viewed)
+    const myEdits = files.filter((file) => file.modifiedByMeTime)
+    console.log(`[Drive] Found ${myEdits.length} files modified by me`)
+
+    return myEdits.map((file) => ({
       source: "docs" as const,
       type: "edit" as const,
       title: file.name || "Untitled",
       docId: file.id,
-      timestamp: new Date(file.modifiedTime || ""),
+      timestamp: new Date(file.modifiedByMeTime || file.modifiedTime || ""),
     }))
   } catch (error: any) {
     console.error("[Drive] Error:", error?.message)
