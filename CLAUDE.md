@@ -4,34 +4,34 @@ A summary of your day - shows hour-by-hour activity from Google (Calendar, Gmail
 
 ## Tech Stack
 
-- **Backend**: Node.js + Express
-- **Frontend**: Vanilla HTML/JS (single file: `src/public/index.html`)
+- **Framework**: Next.js 14 (App Router)
+- **Auth**: NextAuth.js v5 (JWT mode, no database)
 - **APIs**: Google (gmail, calendar, driveactivity v2), Slack (search, users, conversations)
-- **Storage**: File-based token storage (`tokens.json`)
+- **Hosting**: Vercel
 
 ## Project Structure
 
 ```
-src/
-├── index.js           # Express server
-├── config.js          # Env config loader
-├── routes/
-│   ├── auth.js        # Google OAuth flow
-│   └── api.js         # /api/activities, /api/status
-├── services/
-│   ├── google.js      # Calendar, Gmail, Drive Activity APIs
-│   ├── slack.js       # Slack search API + user resolution
-│   └── tokens.js      # Token persistence
+app/
+├── api/
+│   ├── auth/[...nextauth]/route.ts  # NextAuth handler
+│   ├── activities/route.ts          # GET /api/activities?date=YYYY-MM-DD
+│   └── status/route.ts              # GET /api/status
+├── components/
+│   └── Activity.tsx                 # Activity item component
 ├── lib/
-│   ├── aggregator.js  # Groups activities into hourly buckets (7-18)
-│   └── keywords.js    # Keyword extraction
-└── public/
-    └── index.html     # Full frontend (styles + JS)
+│   ├── auth.ts                      # NextAuth config + Google OAuth
+│   ├── google.ts                    # Calendar, Gmail, Drive Activity APIs
+│   ├── slack.ts                     # Slack search API + user resolution
+│   └── aggregator.ts                # Hour bucketing logic
+├── globals.css                      # All styles
+├── layout.tsx                       # Root layout
+└── page.tsx                         # Main page (client component)
 ```
 
 ## Key Implementation Details
 
-### Google Scopes
+### Google Scopes (requested via NextAuth)
 - `gmail.readonly` - Fetch emails
 - `calendar.readonly` - Fetch calendar events
 - `drive.activity.readonly` - Fetch doc/sheet edits, creates, deletes
@@ -41,10 +41,17 @@ src/
 - `users:read` - Resolve user IDs to names
 - `im:read` - Get DM channel info
 
+### Auth Flow
+- NextAuth handles Google OAuth with JWT strategy
+- Access/refresh tokens stored in encrypted JWT cookie
+- Auto-refresh when token expires
+
 ### Data Flow
-1. `/api/activities?date=YYYY-MM-DD` fetches from all sources in parallel
-2. `aggregator.js` buckets by hour, separates calendar (primaries) from communications
-3. Frontend renders hour blocks with all calendar events + communications
+1. `page.tsx` fetches `/api/activities?date=YYYY-MM-DD`
+2. API route gets session, extracts access token
+3. Calls Google/Slack APIs in parallel
+4. `aggregator.ts` buckets by hour (7-18)
+5. Returns `{ hours, summary, sources }`
 
 ### Display Rules
 - Work hours: 7 AM - 6 PM
@@ -53,16 +60,16 @@ src/
 - Slack DMs: No `#` prefix, channels get `#` prefix
 - Docs: Shows edit/create/delete/rename/move actions
 
-## Running
+## Running Locally
 
 ```bash
-cp .env.example .env  # Add credentials
 npm install
-npm start             # http://localhost:3000
+npm run dev  # http://localhost:3000
 ```
 
-## Common Issues
+## Deploy to Vercel
 
-- **"Insufficient Permission"**: Delete `tokens.json`, re-authenticate
-- **Missing doc activity**: Ensure "Drive Activity API" is enabled in Google Cloud Console
-- **Slack rate limits**: Uses search API (1 call) instead of per-channel history
+1. Push to GitHub
+2. Import in Vercel
+3. Add environment variables (NEXTAUTH_SECRET, GOOGLE_*, SLACK_*)
+4. Update Google OAuth redirect URI to production URL

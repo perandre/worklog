@@ -1,46 +1,28 @@
 # Dependencies
 node_modules/
 
-# Environment and secrets
+# Next.js
+.next/
+out/
+
+# Environment
 .env
 .env.local
 .env.*.local
-tokens.json
 
-# Logs
-logs/
-*.log
+# Debug
 npm-debug.log*
 
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage and testing
-coverage/
-.nyc_output/
-
-# Build output
-dist/
-build/
-
-# IDE and editor
+# IDE
 .idea/
 .vscode/
 *.swp
 *.swo
-*~
 .DS_Store
 
-# Optional npm cache
-.npm/
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
 
-# Optional eslint cache
-.eslintcache
-
-# Temporary files
-tmp/
-temp/
-*.tmp
+# Vercel
+.vercel
