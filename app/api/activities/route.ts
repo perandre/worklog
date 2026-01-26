@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
 
   const searchParams = request.nextUrl.searchParams
   const date = searchParams.get("date")
+  const timezone = searchParams.get("tz") || "UTC"
 
   if (!date) {
     return NextResponse.json(
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
     ])
 
     const allActivities = [...calendarEvents, ...emails, ...docActivity, ...slackMessages]
-    const hours = processActivities(allActivities)
+    const hours = processActivities(allActivities, 7, 18, timezone)
     const summary = getDaySummary(hours)
 
     return NextResponse.json({

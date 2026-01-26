@@ -11,7 +11,11 @@ type HourData = {
   communications: Activity[]
 }
 
-function bucketByHour(activities: Activity[], startHour = 7, endHour = 18) {
+function getHourInTimezone(date: Date, timezone: string): number {
+  return parseInt(date.toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: timezone }))
+}
+
+function bucketByHour(activities: Activity[], startHour = 7, endHour = 18, timezone = "UTC") {
   const buckets: Record<number, Activity[]> = {}
 
   for (let hour = startHour; hour < endHour; hour++) {
@@ -22,13 +26,13 @@ function bucketByHour(activities: Activity[], startHour = 7, endHour = 18) {
     if (!activity.timestamp) continue
 
     const timestamp = new Date(activity.timestamp)
-    const hour = timestamp.getHours()
+    const hour = getHourInTimezone(timestamp, timezone)
 
     if (hour < startHour || hour >= endHour) continue
 
     if (activity.endTime) {
       const endTime = new Date(activity.endTime)
-      const endHourCapped = Math.min(endTime.getHours(), endHour - 1)
+      const endHourCapped = Math.min(getHourInTimezone(endTime, timezone), endHour - 1)
 
       for (let h = hour; h <= endHourCapped; h++) {
         if (h >= startHour && h < endHour) {
@@ -98,8 +102,8 @@ function mergeHourActivities(hourActivities: Activity[]): HourData {
   return { primaries, communications }
 }
 
-export function processActivities(activities: Activity[], startHour = 7, endHour = 18) {
-  const buckets = bucketByHour(activities, startHour, endHour)
+export function processActivities(activities: Activity[], startHour = 7, endHour = 18, timezone = "UTC") {
+  const buckets = bucketByHour(activities, startHour, endHour, timezone)
   const processed: Record<number, HourData> = {}
 
   for (const [hour, hourActivities] of Object.entries(buckets)) {

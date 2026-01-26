@@ -76,7 +76,7 @@ function WorklogApp() {
     setError(null)
 
     if (viewMode === "day") {
-      fetch(`/api/activities?date=${currentDate}`)
+      fetch(`/api/activities?date=${currentDate}&tz=${Intl.DateTimeFormat().resolvedOptions().timeZone}`)
         .then((res) => res.json())
         .then((d) => {
           if (d.error) throw new Error(d.error)
@@ -87,7 +87,7 @@ function WorklogApp() {
     } else {
       const monday = getMonday(currentDate)
       const days = getWeekDays(monday)
-      Promise.all(days.map((date) => fetch(`/api/activities?date=${date}`).then((r) => r.json())))
+      Promise.all(days.map((date) => fetch(`/api/activities?date=${date}&tz=${Intl.DateTimeFormat().resolvedOptions().timeZone}`).then((r) => r.json())))
         .then((results) => {
           setWeekData(results.map((r, i) => ({ date: days[i], data: r })))
         })
