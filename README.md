@@ -2,6 +2,8 @@
 
 A summary of your day. Shows hour-by-hour activity from Google Calendar, Gmail, Google Docs, and Slack.
 
+Built with Next.js 14, shadcn/ui, and Tailwind CSS. Supports dark mode.
+
 ## Setup
 
 ```bash
@@ -43,3 +45,11 @@ SLACK_CLIENT_SECRET=...
 3. Add all environment variables (set NEXTAUTH_URL to your Vercel domain)
 4. Deploy
 5. Update Google and Slack redirect URIs to match your Vercel URL
+
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **UI**: shadcn/ui + Tailwind CSS v4
+- **Auth**: NextAuth.js v5
+- **Icons**: Lucide React
+- **APIs**: Google APIs, Slack Web API

@@ -4,6 +4,14 @@ import { useEffect, useState } from "react"
 import { signIn, signOut, useSession } from "next-auth/react"
 import { SessionProvider } from "next-auth/react"
 import Activity from "./components/Activity"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { ThemeToggle } from "@/components/ui/theme-toggle"
+import { AlertCircle, ChevronLeft, ChevronRight, Calendar, LogOut, Link2 } from "lucide-react"
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + "T12:00:00")
@@ -90,26 +98,53 @@ function WorklogApp() {
   }
 
   if (status === "loading") {
-    return <div className="loading">Loading...</div>
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b">
+          <div className="container mx-auto px-4 py-4">
+            <Skeleton className="h-8 w-32" />
+          </div>
+        </header>
+        <main className="container mx-auto px-4 py-6">
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))}
+          </div>
+        </main>
+      </div>
+    )
   }
 
   if (status === "unauthenticated") {
     return (
-      <>
-        <div className="header">
-          <div className="title-block">
-            <h1>Worklog ⏱️</h1>
-            <p className="subtitle">A summary of your day</p>
+      <div className="min-h-screen bg-background">
+        <header className="border-b">
+          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-6 w-6" />
+              <h1 className="text-xl font-semibold">Worklog</h1>
+            </div>
+            <ThemeToggle />
           </div>
-        </div>
-        <div className="auth-prompt">
-          <h2>Connect Your Google Account</h2>
-          <p>To view your calendar events, emails, and document activity.</p>
-          <button className="auth-btn" onClick={() => signIn("google")}>
-            Connect Google Account
-          </button>
-        </div>
-      </>
+        </header>
+        <main className="container mx-auto px-4 py-16 flex items-center justify-center">
+          <Card className="w-full max-w-md">
+            <CardHeader className="text-center">
+              <CardTitle>Welcome to Worklog</CardTitle>
+              <CardDescription>
+                Connect your Google account to view your calendar events, emails, and document activity.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <Button onClick={() => signIn("google")} size="lg">
+                <Link2 className="mr-2 h-4 w-4" />
+                Connect Google Account
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
     )
   }
 
@@ -126,99 +161,160 @@ function WorklogApp() {
         })()
 
   return (
-    <>
-      <div className="header">
-        <div className="title-block">
-          <h1>Worklog ⏱️</h1>
-          <p className="subtitle">A summary of your day</p>
-        </div>
-        <div className="date-nav">
-          <button onClick={() => navigate(-1)}>◀</button>
-          <span style={{ fontWeight: 500, padding: "0 8px" }}>{dateLabel}</span>
-          <button onClick={() => navigate(1)}>▶</button>
-          <button className="view-toggle" onClick={() => setViewMode(viewMode === "day" ? "week" : "day")}>
-            {viewMode === "day" ? "Show Week" : "Show Day"}
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      {/* Header */}
+      <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto px-4">
+          <div className="flex h-14 items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              <span className="font-semibold">Worklog</span>
+            </div>
 
-      {error && <div className="error">Error: {error}</div>}
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="min-w-[200px] text-center text-sm font-medium">
+                {dateLabel}
+              </span>
+              <Button variant="ghost" size="icon" onClick={() => navigate(1)}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
 
-      {loading ? (
-        <div className="loading">Loading activities...</div>
-      ) : viewMode === "day" && data ? (
-        <DayView data={data} date={currentDate} isToday={currentDate === today} />
-      ) : viewMode === "week" && weekData.length > 0 ? (
-        <WeekView weekData={weekData} today={today} />
-      ) : null}
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === "day" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("day")}
+              >
+                Day
+              </Button>
+              <Button
+                variant={viewMode === "week" ? "secondary" : "ghost"}
+                size="sm"
+                onClick={() => setViewMode("week")}
+              >
+                Week
+              </Button>
+              <Separator orientation="vertical" className="h-6" />
+              <ThemeToggle />
+            </div>
+          </div>
+        </div>
+      </header>
 
-      <div className="status-bar">
-        <div className="status-item">
-          <span className={`status-dot ${serviceStatus.google ? "connected" : "disconnected"}`} />
-          Google (Gmail, Calendar, Docs)
-          {serviceStatus.google && (
-            <a href="#" onClick={() => signOut()} style={{ marginLeft: 8, fontSize: 12 }}>
-              Disconnect
-            </a>
-          )}
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-6">
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-32 w-full" />
+            ))}
+          </div>
+        ) : viewMode === "day" && data ? (
+          <DayView data={data} date={currentDate} isToday={currentDate === today} />
+        ) : viewMode === "week" && weekData.length > 0 ? (
+          <WeekView weekData={weekData} today={today} />
+        ) : null}
+      </main>
+
+      {/* Footer / Status */}
+      <footer className="border-t mt-auto">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Badge variant={serviceStatus.google ? "default" : "secondary"}>
+                  Google
+                </Badge>
+                {serviceStatus.google && (
+                  <Button variant="ghost" size="sm" onClick={() => signOut()}>
+                    <LogOut className="h-3 w-3 mr-1" />
+                    Disconnect
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant={serviceStatus.slack ? "default" : "secondary"}>
+                  Slack
+                </Badge>
+                {serviceStatus.slack ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      fetch("/api/auth/slack/disconnect", { method: "POST" }).then(() => {
+                        setServiceStatus((s) => ({ ...s, slack: false }))
+                      })
+                    }}
+                  >
+                    <LogOut className="h-3 w-3 mr-1" />
+                    Disconnect
+                  </Button>
+                ) : (
+                  <Button variant="ghost" size="sm" asChild>
+                    <a href="/api/auth/slack">
+                      <Link2 className="h-3 w-3 mr-1" />
+                      Connect
+                    </a>
+                  </Button>
+                )}
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Hours 7:00 - 18:00
+            </p>
+          </div>
         </div>
-        <div className="status-item">
-          <span className={`status-dot ${serviceStatus.slack ? "connected" : "disconnected"}`} />
-          Slack
-          {serviceStatus.slack ? (
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault()
-                fetch("/api/auth/slack/disconnect", { method: "POST" }).then(() => {
-                  setServiceStatus((s) => ({ ...s, slack: false }))
-                })
-              }}
-              style={{ marginLeft: 8, fontSize: 12 }}
-            >
-              Disconnect
-            </a>
-          ) : (
-            <a href="/api/auth/slack" style={{ marginLeft: 8, fontSize: 12 }}>
-              Connect
-            </a>
-          )}
-        </div>
-      </div>
-    </>
+      </footer>
+    </div>
   )
 }
 
 function DayView({ data, date, isToday }: { data: any; date: string; isToday: boolean }) {
   return (
-    <div className="week-container" style={{ justifyContent: "center" }}>
-      <div className="day-column">
-        <div className={`day-header ${isToday ? "today" : ""}`}>{formatDate(date)}</div>
-        <div className="timeline">
-          {Array.from({ length: 11 }, (_, i) => i + 7).map((hour) => {
-            const hourData = data.hours[hour] || { primaries: [], communications: [] }
-            const isEmpty = (!hourData.primaries?.length) && !hourData.communications?.length
-            return (
-              <div className="hour-block" key={hour}>
-                <div className="hour-label">{hour.toString().padStart(2, "0")}:00</div>
-                <div className={`hour-content ${isEmpty ? "empty" : ""}`}>
+    <div className="max-w-2xl mx-auto">
+      <div className="flex items-center gap-2 mb-6">
+        <h2 className="text-lg font-semibold">{formatDate(date)}</h2>
+        {isToday && <Badge>Today</Badge>}
+      </div>
+      <div className="space-y-2">
+        {Array.from({ length: 11 }, (_, i) => i + 7).map((hour) => {
+          const hourData = data.hours[hour] || { primaries: [], communications: [] }
+          const isEmpty = (!hourData.primaries?.length) && !hourData.communications?.length
+          return (
+            <div key={hour} className="flex gap-4">
+              <div className="w-14 shrink-0 text-right text-sm text-muted-foreground pt-3">
+                {hour.toString().padStart(2, "0")}:00
+              </div>
+              <Card className={`flex-1 ${isEmpty ? "bg-muted/30" : ""}`}>
+                <CardContent className="p-3">
                   {isEmpty ? (
-                    <div className="empty-text">No activity</div>
+                    <p className="text-sm text-muted-foreground">No activity</p>
                   ) : (
-                    <>
+                    <div className="space-y-2">
                       {(hourData.primaries || []).map((event: any, i: number) => (
                         <Activity key={`cal-${i}`} activity={event} />
                       ))}
                       {hourData.communications.slice(0, 6).map((comm: any, i: number) => (
                         <Activity key={`comm-${i}`} activity={comm} />
                       ))}
-                    </>
+                    </div>
                   )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
+                </CardContent>
+              </Card>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -226,31 +322,38 @@ function DayView({ data, date, isToday }: { data: any; date: string; isToday: bo
 
 function WeekView({ weekData, today }: { weekData: any[]; today: string }) {
   return (
-    <div className="week-container">
+    <div className="flex gap-4 overflow-x-auto pb-4">
       {weekData.map(({ date, data }) => (
-        <div className="day-column" key={date}>
-          <div className={`day-header ${date === today ? "today" : ""}`}>{formatDate(date)}</div>
-          <div className="timeline">
+        <div key={date} className="flex-1 min-w-[260px]">
+          <div className="flex items-center gap-2 mb-4">
+            <h3 className="font-medium">{formatDate(date)}</h3>
+            {date === today && <Badge variant="secondary">Today</Badge>}
+          </div>
+          <div className="space-y-2">
             {Array.from({ length: 11 }, (_, i) => i + 7).map((hour) => {
               const hourData = data.hours?.[hour] || { primaries: [], communications: [] }
               const isEmpty = (!hourData.primaries?.length) && !hourData.communications?.length
               return (
-                <div className="hour-block" key={hour}>
-                  <div className="hour-label">{hour.toString().padStart(2, "0")}:00</div>
-                  <div className={`hour-content ${isEmpty ? "empty" : ""}`}>
-                    {isEmpty ? (
-                      <div className="empty-text">No activity</div>
-                    ) : (
-                      <>
-                        {(hourData.primaries || []).map((event: any, i: number) => (
-                          <Activity key={`cal-${i}`} activity={event} />
-                        ))}
-                        {hourData.communications.slice(0, 4).map((comm: any, i: number) => (
-                          <Activity key={`comm-${i}`} activity={comm} />
-                        ))}
-                      </>
-                    )}
+                <div key={hour} className="flex gap-2">
+                  <div className="w-10 shrink-0 text-right text-xs text-muted-foreground pt-2">
+                    {hour.toString().padStart(2, "0")}:00
                   </div>
+                  <Card className={`flex-1 ${isEmpty ? "bg-muted/30" : ""}`}>
+                    <CardContent className="p-2">
+                      {isEmpty ? (
+                        <p className="text-xs text-muted-foreground">-</p>
+                      ) : (
+                        <div className="space-y-1">
+                          {(hourData.primaries || []).map((event: any, i: number) => (
+                            <Activity key={`cal-${i}`} activity={event} compact />
+                          ))}
+                          {hourData.communications.slice(0, 3).map((comm: any, i: number) => (
+                            <Activity key={`comm-${i}`} activity={comm} compact />
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
                 </div>
               )
             })}
