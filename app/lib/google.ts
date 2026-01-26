@@ -101,33 +101,62 @@ export async function getDocActivity(accessToken: string, date: string, timezone
     const auth = getAuthClient(accessToken)
     const driveActivity = google.driveactivity({ version: "v2", auth })
 
-    // Hardcoded: Jan 26, 2026
+    // Date range with timezone buffer
+    const startOfDay = new Date(`${date}T00:00:00.000Z`)
+    startOfDay.setUTCHours(startOfDay.getUTCHours() - 14)
+    const endOfDay = new Date(`${date}T23:59:59.999Z`)
+    endOfDay.setUTCHours(endOfDay.getUTCHours() + 14)
+
     const response = await driveActivity.activity.query({
       requestBody: {
-        filter: `time >= "2026-01-26T00:00:00Z" AND time <= "2026-01-26T23:59:59Z"`,
+        filter: `time >= "${startOfDay.toISOString()}" AND time <= "${endOfDay.toISOString()}"`,
         pageSize: 100,
       },
     })
 
     const activities = response.data.activities || []
-    console.log(`[Drive] API returned ${activities.length} activities for Jan 26`)
+    console.log(`[Drive] API returned ${activities.length} activities`)
 
-    // No filters - return everything
-    const docEdits = activities.map((activity) => {
+    // Log first few actors to understand structure
+    if (activities.length > 0) {
+      const samples = activities.slice(0, 5).map((a: any) => ({
+        title: a.targets?.[0]?.driveItem?.title,
+        actors: a.actors,
+        isCurrentUser: a.actors?.some((actor: any) => actor.user?.knownUser?.isCurrentUser),
+      }))
+      console.log(`[Drive] Actor samples:`, JSON.stringify(samples))
+    }
+
+    const docEdits: any[] = []
+    let skippedNotMe = 0
+
+    for (const activity of activities) {
+      // Check if current user performed this action
+      const isMe = activity.actors?.some((actor: any) =>
+        actor.user?.knownUser?.isCurrentUser === true
+      )
+
+      if (!isMe) {
+        skippedNotMe++
+        continue
+      }
+
       const target = activity.targets?.[0]?.driveItem
-      const action = activity.primaryActionDetail || {}
-      const actionType = Object.keys(action)[0] || "activity"
+      if (!target) continue
 
-      return {
+      const action = activity.primaryActionDetail || {}
+      const actionType = Object.keys(action)[0] || "edit"
+
+      docEdits.push({
         source: "docs" as const,
         type: actionType,
-        title: target?.title || "Unknown",
-        docId: target?.name?.replace("items/", "") || "",
+        title: target.title || "Untitled",
+        docId: target.name?.replace("items/", "") || "",
         timestamp: new Date(activity.timestamp || Date.now()),
-      }
-    })
+      })
+    }
 
-    console.log(`[Drive] Returning ${docEdits.length} doc activities`)
+    console.log(`[Drive] Skipped ${skippedNotMe} not by me, returning ${docEdits.length}`)
     return docEdits
   } catch (error: any) {
     console.error("[Drive] Error:", error?.message)
