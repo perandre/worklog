@@ -95,30 +95,31 @@ export async function getEmails(accessToken: string, date: string) {
   return result
 }
 
+// Cache People ID per access token (avoids repeated API calls)
+const peopleIdCache = new Map<string, string>()
+
 export async function getDocActivity(accessToken: string, date: string, timezone = "UTC", userEmail?: string) {
   console.log(`[Drive] Fetching activity for ${date}`)
   try {
     const auth = getAuthClient(accessToken)
 
-    // Get current user's People ID for filtering
-    const people = google.people({ version: "v1", auth })
-    const meResponse = await people.people.get({
-      resourceName: "people/me",
-      personFields: "metadata",
-    })
-    const myPeopleId = meResponse.data.resourceName
+    // Get current user's People ID (cached)
+    let myPeopleId = peopleIdCache.get(accessToken)
+    if (!myPeopleId) {
+      const people = google.people({ version: "v1", auth })
+      const meResponse = await people.people.get({
+        resourceName: "people/me",
+        personFields: "metadata",
+      })
+      myPeopleId = meResponse.data.resourceName || ""
+      peopleIdCache.set(accessToken, myPeopleId)
+    }
 
     const driveActivity = google.driveactivity({ version: "v2", auth })
 
-    // Date range with wide timezone buffer (±14h covers all zones)
-    const startOfDay = new Date(`${date}T00:00:00.000Z`)
-    startOfDay.setUTCHours(startOfDay.getUTCHours() - 14)
-    const endOfDay = new Date(`${date}T23:59:59.999Z`)
-    endOfDay.setUTCHours(endOfDay.getUTCHours() + 14)
-
+    // Fetch recent activity (no API filter - we'll filter by date in JS)
     const response = await driveActivity.activity.query({
       requestBody: {
-        filter: `time >= "${startOfDay.toISOString()}" AND time <= "${endOfDay.toISOString()}"`,
         pageSize: 200,
       },
     })
@@ -148,9 +149,15 @@ export async function getDocActivity(accessToken: string, date: string, timezone
       })
     }
 
+    // Filter to activities on the requested date (in user's timezone)
+    const filtered = docEdits.filter((edit) => {
+      const editDate = edit.timestamp.toLocaleDateString("en-CA", { timeZone: timezone }) // YYYY-MM-DD format
+      return editDate === date
+    })
+
     // Dedupe by title + hour (in user's timezone)
     const seen = new Set<string>()
-    const deduped = docEdits.filter((edit) => {
+    const deduped = filtered.filter((edit) => {
       const hour = parseInt(edit.timestamp.toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: timezone }))
       const key = `${edit.title}-${hour}`
       if (seen.has(key)) return false
@@ -158,7 +165,7 @@ export async function getDocActivity(accessToken: string, date: string, timezone
       return true
     })
 
-    console.log(`[Drive] Found ${deduped.length} doc activities`)
+    console.log(`[Drive] Found ${deduped.length} doc activities for ${date}`)
     return deduped
   } catch (error: any) {
     console.error("[Drive] Error:", error?.message)
