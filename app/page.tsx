@@ -255,7 +255,7 @@ function WorklogApp() {
             ))}
           </div>
         ) : viewMode === "day" && data ? (
-          <DayView data={data} date={currentDate} isToday={currentDate === today} />
+          <DayView data={data} />
         ) : viewMode === "week" && weekData.length > 0 ? (
           <WeekView weekData={weekData} today={today} />
         ) : null}
@@ -314,13 +314,9 @@ function WorklogApp() {
   )
 }
 
-function DayView({ data, date, isToday }: { data: any; date: string; isToday: boolean }) {
+function DayView({ data }: { data: any }) {
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="flex items-center gap-2 mb-6">
-        <h2 className="text-lg font-semibold">{formatDate(date)}</h2>
-        {isToday && <Badge>Today</Badge>}
-      </div>
       <div className="space-y-2">
         {Array.from({ length: 11 }, (_, i) => i + 7).map((hour) => {
           const hourData = data.hours[hour] || { primaries: [], communications: [] }
