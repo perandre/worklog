@@ -95,13 +95,24 @@ export async function getEmails(accessToken: string, date: string) {
   return result
 }
 
-export async function getDocActivity(accessToken: string, date: string) {
-  console.log(`[Drive Activity] Fetching activity for ${date}`)
+export async function getDocActivity(accessToken: string, date: string, timezone = "UTC") {
+  console.log(`[Drive Activity] Fetching activity for ${date} (${timezone})`)
   const auth = getAuthClient(accessToken)
   const driveActivity = google.driveactivity({ version: "v2", auth })
 
-  const startOfDay = new Date(date + "T00:00:00")
-  const endOfDay = new Date(date + "T23:59:59.999")
+  // Create date in user's timezone, then convert to UTC for API filter
+  const localMidnight = new Date(`${date}T00:00:00`)
+  const localEndOfDay = new Date(`${date}T23:59:59.999`)
+
+  // Get timezone offset and adjust
+  const formatter = new Intl.DateTimeFormat("en-US", { timeZone: timezone, timeZoneName: "shortOffset" })
+  const tzParts = formatter.formatToParts(localMidnight)
+  const offsetStr = tzParts.find(p => p.type === "timeZoneName")?.value || "+00:00"
+  const offsetMatch = offsetStr.match(/GMT([+-]\d+)?/)
+  const offsetHours = offsetMatch?.[1] ? parseInt(offsetMatch[1]) : 0
+
+  const startOfDay = new Date(localMidnight.getTime() - offsetHours * 60 * 60 * 1000)
+  const endOfDay = new Date(localEndOfDay.getTime() - offsetHours * 60 * 60 * 1000)
 
   try {
     let allActivities: any[] = []
@@ -163,10 +174,10 @@ export async function getDocActivity(accessToken: string, date: string) {
       }
     }
 
-    // Dedupe by title + hour
+    // Dedupe by title + hour (in user's timezone)
     const seen = new Set<string>()
     const result = docEdits.filter((edit) => {
-      const hour = edit.timestamp.getHours()
+      const hour = parseInt(edit.timestamp.toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: timezone }))
       const key = `${edit.title}-${hour}`
       if (seen.has(key)) return false
       seen.add(key)
