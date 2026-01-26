@@ -96,7 +96,12 @@ export async function getEmails(accessToken: string, date: string) {
 }
 
 export async function getDocActivity(accessToken: string, date: string, timezone = "UTC", userEmail?: string) {
-  console.log(`[Drive Activity] Fetching activity for ${date} (${timezone}) user: ${userEmail}`)
+  console.log(`[Drive Activity] START - ${date} (${timezone}) user: ${userEmail}`)
+
+  if (!accessToken) {
+    console.error("[Drive Activity] No access token!")
+    return []
+  }
   const auth = getAuthClient(accessToken)
   const driveActivity = google.driveactivity({ version: "v2", auth })
 
@@ -119,6 +124,7 @@ export async function getDocActivity(accessToken: string, date: string, timezone
     let pageToken: string | undefined
 
     do {
+      console.log(`[Drive Activity] Querying API: ${startOfDay.toISOString()} to ${endOfDay.toISOString()}`)
       const response = await driveActivity.activity.query({
         requestBody: {
           filter: `time >= "${startOfDay.toISOString()}" AND time <= "${endOfDay.toISOString()}"`,
@@ -208,10 +214,8 @@ export async function getDocActivity(accessToken: string, date: string, timezone
     console.log(`[Drive Activity] Found ${result.length} doc edits after dedupe`)
     return result
   } catch (error: any) {
-    console.error("Error fetching doc activity:", error?.message || error)
-    if (error?.response?.data) {
-      console.error("API error details:", JSON.stringify(error.response.data, null, 2))
-    }
+    console.error("[Drive Activity] ERROR:", error?.message || error)
+    console.error("[Drive Activity] Full error:", JSON.stringify(error, Object.getOwnPropertyNames(error)))
     return []
   }
 }
