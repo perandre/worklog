@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Work Activity Tracker</title>
+  <title>Worklog</title>
   <style>
     :root {
       --slack-color: #4A154B;
@@ -44,6 +44,13 @@
     h1 {
       font-size: 24px;
       font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 400;
     }
 
     .date-nav {
@@ -361,7 +368,10 @@
 </head>
 <body>
   <div class="header">
-    <h1>Work Activity Tracker</h1>
+    <div class="title-block">
+      <h1>Worklog ⏱️</h1>
+      <p class="subtitle">A summary of your day</p>
+    </div>
     <div class="date-nav">
       <button id="prev-btn" title="Previous">&#9664;</button>
       <span id="date-label" style="font-weight: 500; padding: 0 8px;"></span>

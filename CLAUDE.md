@@ -1,6 +1,6 @@
-# Work Activity Tracker
+# Worklog ⏱️
 
-Local web app for timesheet logging - shows hour-by-hour activity from Google (Calendar, Gmail, Docs) and Slack.
+A summary of your day - shows hour-by-hour activity from Google (Calendar, Gmail, Docs) and Slack.
 
 ## Tech Stack
 
