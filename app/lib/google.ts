@@ -117,10 +117,10 @@ export async function getDocActivity(accessToken: string, date: string, timezone
     const endOfDay = new Date(`${date}T23:59:59.999Z`)
     endOfDay.setUTCHours(endOfDay.getUTCHours() + 14)
 
+    // Get ALL recent activity (no date filter) to see if user's activities exist at all
     const response = await driveActivity.activity.query({
       requestBody: {
-        filter: `time >= "${startOfDay.toISOString()}" AND time <= "${endOfDay.toISOString()}"`,
-        pageSize: 100,
+        pageSize: 200,
       },
     })
 
@@ -156,6 +156,17 @@ export async function getDocActivity(accessToken: string, date: string, timezone
       })
     }
 
+    // Log all unique People IDs we found
+    const allPeopleIds = new Set<string>()
+    for (const activity of activities) {
+      for (const actor of activity.actors || []) {
+        if (actor.user?.knownUser?.personName) {
+          allPeopleIds.add(actor.user.knownUser.personName)
+        }
+      }
+    }
+    console.log(`[Drive] All People IDs found: ${Array.from(allPeopleIds).join(", ")}`)
+    console.log(`[Drive] My ID: ${myPeopleId}`)
     console.log(`[Drive] Skipped ${skippedNotMe} not by me, returning ${docEdits.length}`)
     return docEdits
   } catch (error: any) {
