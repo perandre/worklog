@@ -11,11 +11,8 @@ export async function getCalendarEvents(accessToken: string, date: string) {
   const auth = getAuthClient(accessToken)
   const calendar = google.calendar({ version: "v3", auth })
 
-  const startOfDay = new Date(date)
-  startOfDay.setHours(0, 0, 0, 0)
-
-  const endOfDay = new Date(date)
-  endOfDay.setHours(23, 59, 59, 999)
+  const startOfDay = new Date(date + "T00:00:00")
+  const endOfDay = new Date(date + "T23:59:59.999")
 
   const response = await calendar.events.list({
     calendarId: "primary",
@@ -43,7 +40,7 @@ export async function getEmails(accessToken: string, date: string) {
   const auth = getAuthClient(accessToken)
   const gmail = google.gmail({ version: "v1", auth })
 
-  const dateObj = new Date(date)
+  const dateObj = new Date(date + "T12:00:00")
   const year = dateObj.getFullYear()
   const month = String(dateObj.getMonth() + 1).padStart(2, "0")
   const day = String(dateObj.getDate()).padStart(2, "0")
@@ -103,11 +100,8 @@ export async function getDocActivity(accessToken: string, date: string) {
   const auth = getAuthClient(accessToken)
   const driveActivity = google.driveactivity({ version: "v2", auth })
 
-  const startOfDay = new Date(date)
-  startOfDay.setHours(0, 0, 0, 0)
-
-  const endOfDay = new Date(date)
-  endOfDay.setHours(23, 59, 59, 999)
+  const startOfDay = new Date(date + "T00:00:00")
+  const endOfDay = new Date(date + "T23:59:59.999")
 
   try {
     let allActivities: any[] = []
