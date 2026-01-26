@@ -153,6 +153,12 @@ export async function getDocActivity(accessToken: string, date: string, timezone
 
     const docEdits: any[] = []
 
+    let skippedNotUser = 0
+    let skippedNoAction = 0
+    let skippedNoTarget = 0
+    let skippedFolder = 0
+    let skippedNoTimestamp = 0
+
     for (const activity of allActivities) {
       // Filter to only activities by the current user
       if (userEmail) {
@@ -161,12 +167,16 @@ export async function getDocActivity(accessToken: string, date: string, timezone
           actor.user?.knownUser?.isCurrentUser === true
         )
         if (!isUserActivity) {
+          skippedNotUser++
           continue
         }
       }
 
       const action = activity.primaryActionDetail
-      if (!action) continue
+      if (!action) {
+        skippedNoAction++
+        continue
+      }
 
       const actionType = action.edit
         ? "edit"
@@ -181,16 +191,28 @@ export async function getDocActivity(accessToken: string, date: string, timezone
                 : action.move
                   ? "move"
                   : null
-      if (!actionType) continue
+      if (!actionType) {
+        skippedNoAction++
+        continue
+      }
 
       for (const target of activity.targets || []) {
-        if (!target?.driveItem) continue
+        if (!target?.driveItem) {
+          skippedNoTarget++
+          continue
+        }
 
         const driveItem = target.driveItem
-        if (driveItem.mimeType?.includes("folder")) continue
+        if (driveItem.mimeType?.includes("folder")) {
+          skippedFolder++
+          continue
+        }
 
         const timestamp = activity.timestamp
-        if (!timestamp) continue
+        if (!timestamp) {
+          skippedNoTimestamp++
+          continue
+        }
 
         docEdits.push({
           source: "docs" as const,
@@ -202,6 +224,17 @@ export async function getDocActivity(accessToken: string, date: string, timezone
       }
     }
 
+    console.log(`[Drive Activity] Skipped: notUser=${skippedNotUser}, noAction=${skippedNoAction}, noTarget=${skippedNoTarget}, folder=${skippedFolder}, noTimestamp=${skippedNoTimestamp}`)
+
+    console.log(`[Drive Activity] After processing: ${docEdits.length} edits`)
+    if (docEdits.length > 0) {
+      console.log(`[Drive Activity] First few edits:`, docEdits.slice(0, 3).map(e => ({
+        title: e.title,
+        type: e.type,
+        hour: parseInt(e.timestamp.toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: timezone }))
+      })))
+    }
+
     // Dedupe by title + hour (in user's timezone)
     const seen = new Set<string>()
     const result = docEdits.filter((edit) => {
@@ -211,7 +244,7 @@ export async function getDocActivity(accessToken: string, date: string, timezone
       seen.add(key)
       return true
     })
-    console.log(`[Drive Activity] Found ${result.length} doc edits after dedupe`)
+    console.log(`[Drive Activity] After dedupe: ${result.length} edits`)
     return result
   } catch (error: any) {
     console.error("[Drive Activity] ERROR:", error?.message || error)
