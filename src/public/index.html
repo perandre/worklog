@@ -579,8 +579,8 @@
       html += '<div class="timeline">';
 
       for (let hour = 7; hour < 18; hour++) {
-        const hourData = data.hours[hour] || { primary: null, communications: [], keywords: [], projects: [] };
-        const isEmpty = !hourData.primary && hourData.communications.length === 0;
+        const hourData = data.hours[hour] || { primaries: [], communications: [], keywords: [], projects: [] };
+        const isEmpty = (!hourData.primaries || hourData.primaries.length === 0) && hourData.communications.length === 0;
 
         html += `
           <div class="hour-block">
@@ -591,17 +591,20 @@
         if (isEmpty) {
           html += '<div class="empty-text">No activity</div>';
         } else {
-          if (hourData.primary && !hourData.primary.isSpanning) {
-            html += createActivityHtml(hourData.primary);
-          } else if (hourData.primary && hourData.primary.isSpanning) {
-            html += `
-              <div class="activity">
-                <span class="source-icon calendar">&#128197;</span>
-                <div class="activity-content">
-                  <div class="activity-title" style="color: var(--text-secondary);">${escapeHtml(truncateText(hourData.primary.title, 35))} (cont.)</div>
+          // Render all calendar events
+          for (const event of (hourData.primaries || [])) {
+            if (!event.isSpanning) {
+              html += createActivityHtml(event);
+            } else {
+              html += `
+                <div class="activity">
+                  <span class="source-icon calendar">&#128197;</span>
+                  <div class="activity-content">
+                    <div class="activity-title" style="color: var(--text-secondary);">${escapeHtml(truncateText(event.title, 35))} (cont.)</div>
+                  </div>
                 </div>
-              </div>
-            `;
+              `;
+            }
           }
 
           const commsToShow = hourData.communications.slice(0, 6);
@@ -634,8 +637,8 @@
         html += '<div class="timeline">';
 
         for (let hour = 7; hour < 18; hour++) {
-          const hourData = data.hours[hour] || { primary: null, communications: [], keywords: [], projects: [] };
-          const isEmpty = !hourData.primary && hourData.communications.length === 0;
+          const hourData = data.hours[hour] || { primaries: [], communications: [], keywords: [], projects: [] };
+          const isEmpty = (!hourData.primaries || hourData.primaries.length === 0) && hourData.communications.length === 0;
 
           html += `
             <div class="hour-block">
@@ -646,21 +649,23 @@
           if (isEmpty) {
             html += '<div class="empty-text">No activity</div>';
           } else {
-            // Primary activity (calendar event)
-            if (hourData.primary && !hourData.primary.isSpanning) {
-              html += createActivityHtml(hourData.primary);
-            } else if (hourData.primary && hourData.primary.isSpanning) {
-              html += `
-                <div class="activity">
-                  <span class="source-icon calendar">&#128197;</span>
-                  <div class="activity-content">
-                    <div class="activity-title" style="color: var(--text-secondary);">${escapeHtml(truncateText(hourData.primary.title, 35))} (cont.)</div>
+            // All calendar events
+            for (const event of (hourData.primaries || [])) {
+              if (!event.isSpanning) {
+                html += createActivityHtml(event);
+              } else {
+                html += `
+                  <div class="activity">
+                    <span class="source-icon calendar">&#128197;</span>
+                    <div class="activity-content">
+                      <div class="activity-title" style="color: var(--text-secondary);">${escapeHtml(truncateText(event.title, 35))} (cont.)</div>
+                    </div>
                   </div>
-                </div>
-              `;
+                `;
+              }
             }
 
-            // Communications (show max 2 in week view)
+            // Communications
             const commsToShow = hourData.communications.slice(0, 4);
             for (const comm of commsToShow) {
               html += createActivityHtml(comm);
@@ -716,7 +721,7 @@
           meta = `${activity.attendees.length} attendee${activity.attendees.length > 1 ? 's' : ''}`;
         }
       } else if (activity.source === 'slack') {
-        title = `#${activity.channel}`;
+        title = activity.isDm ? activity.channel : `#${activity.channel}`;
         meta = truncateText(activity.text, 60);
       } else if (activity.source === 'gmail') {
         title = truncateText(activity.subject);

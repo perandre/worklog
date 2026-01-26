@@ -114,12 +114,15 @@ async function getMessages(date) {
     for (const match of matches) {
       let channel = match.channel?.name || 'DM';
       const channelId = match.channel?.id;
+      let isDm = false;
 
       // Resolve channel name
       if (isUserId(channel)) {
         channel = userCache.get(channel) || channel;
+        isDm = true;
       } else if (isDmChannelId(channelId)) {
         channel = userCache.get(`dm:${channelId}`) || 'DM';
+        isDm = true;
       }
 
       const timestamp = new Date(parseFloat(match.ts) * 1000);
@@ -133,6 +136,7 @@ async function getMessages(date) {
           type: 'message',
           channel,
           channelId,
+          isDm,
           text: match.text || '',
           timestamp
         });

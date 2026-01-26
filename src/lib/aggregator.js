@@ -106,8 +106,8 @@ function mergeHourActivities(hourActivities) {
   const gmail = hourActivities.filter(a => a.source === 'gmail');
   const docs = hourActivities.filter(a => a.source === 'docs');
 
-  // Calendar events are primary (meeting time)
-  const primary = calendar.length > 0 ? calendar[0] : null;
+  // All calendar events for this hour
+  const primaries = calendar;
 
   // Filter and dedupe emails
   const filteredEmails = dedupeEmailsByThread(
@@ -134,7 +134,7 @@ function mergeHourActivities(hourActivities) {
   const projects = detectProjectNames(allText);
 
   return {
-    primary,
+    primaries,
     communications,
     keywords,
     projects
@@ -173,9 +173,8 @@ function getDaySummary(hourlyData) {
   const allProjects = [];
 
   for (const hourData of Object.values(hourlyData)) {
-    if (hourData.primary && !hourData.primary.isSpanning) {
-      totalMeetings++;
-    }
+    // Count non-spanning calendar events
+    totalMeetings += (hourData.primaries || []).filter(p => !p.isSpanning).length;
     totalSlackMessages += hourData.communications.filter(c => c.source === 'slack').length;
     totalEmails += hourData.communications.filter(c => c.source === 'gmail').length;
     totalDocEdits += hourData.communications.filter(c => c.source === 'docs').length;
