@@ -50,7 +50,7 @@ export async function getEmails(accessToken: string, date: string) {
   nextDay.setDate(nextDay.getDate() + 1)
   const beforeDate = `${nextDay.getFullYear()}/${String(nextDay.getMonth() + 1).padStart(2, "0")}/${String(nextDay.getDate()).padStart(2, "0")}`
 
-  const query = `after:${afterDate} before:${beforeDate}`
+  const query = `after:${afterDate} before:${beforeDate} is:read`
 
   const response = await gmail.users.messages.list({
     userId: "me",
