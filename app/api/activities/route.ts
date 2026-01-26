@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { cookies } from "next/headers"
 import { auth } from "@/app/lib/auth"
 import { getCalendarEvents, getEmails, getDocActivity } from "@/app/lib/google"
 import { getMessages } from "@/app/lib/slack"
@@ -6,6 +7,8 @@ import { processActivities, getDaySummary } from "@/app/lib/aggregator"
 
 export async function GET(request: NextRequest) {
   const session = await auth()
+  const cookieStore = await cookies()
+  const slackToken = cookieStore.get("slack_token")?.value
 
   if (!session?.accessToken) {
     return NextResponse.json(
@@ -52,7 +55,7 @@ export async function GET(request: NextRequest) {
         console.error("Docs fetch error:", err.message)
         return []
       }),
-      getMessages(date).catch((err) => {
+      getMessages(date, slackToken).catch((err) => {
         console.error("Slack fetch error:", err.message)
         return []
       }),

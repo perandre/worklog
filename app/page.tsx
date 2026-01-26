@@ -165,6 +165,24 @@ function WorklogApp() {
         <div className="status-item">
           <span className={`status-dot ${serviceStatus.slack ? "connected" : "disconnected"}`} />
           Slack
+          {serviceStatus.slack ? (
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault()
+                fetch("/api/auth/slack/disconnect", { method: "POST" }).then(() => {
+                  setServiceStatus((s) => ({ ...s, slack: false }))
+                })
+              }}
+              style={{ marginLeft: 8, fontSize: 12 }}
+            >
+              Disconnect
+            </a>
+          ) : (
+            <a href="/api/auth/slack" style={{ marginLeft: 8, fontSize: 12 }}>
+              Connect
+            </a>
+          )}
         </div>
       </div>
     </>

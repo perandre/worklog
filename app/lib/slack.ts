@@ -48,15 +48,15 @@ async function getDmUserName(client: WebClient, channelId: string) {
   return "DM"
 }
 
-export async function getMessages(date: string) {
-  const token = process.env.SLACK_USER_TOKEN
-  if (!token) {
+export async function getMessages(date: string, token?: string) {
+  const slackToken = token || process.env.SLACK_USER_TOKEN
+  if (!slackToken) {
     console.log(`[Slack] Not configured, skipping`)
     return []
   }
 
   console.log(`[Slack] Fetching messages for ${date}`)
-  const client = new WebClient(token)
+  const client = new WebClient(slackToken)
   const dateObj = new Date(date)
   const dateStr = dateObj.toISOString().split("T")[0]
 
@@ -133,6 +133,6 @@ export async function getMessages(date: string) {
   }
 }
 
-export function isConfigured() {
-  return !!process.env.SLACK_USER_TOKEN
+export function isConfigured(token?: string) {
+  return !!(token || process.env.SLACK_USER_TOKEN)
 }
