@@ -100,46 +100,38 @@ export async function getDocActivity(accessToken: string, date: string, timezone
   try {
     const auth = getAuthClient(accessToken)
 
-    // First, get the current user's People ID
+    // Get current user's People ID for filtering
     const people = google.people({ version: "v1", auth })
     const meResponse = await people.people.get({
       resourceName: "people/me",
       personFields: "metadata",
     })
-    const myPeopleId = meResponse.data.resourceName // e.g., "people/123456789"
-    console.log(`[Drive] My People ID: ${myPeopleId}`)
+    const myPeopleId = meResponse.data.resourceName
 
     const driveActivity = google.driveactivity({ version: "v2", auth })
 
-    // Date range with timezone buffer
+    // Date range with wide timezone buffer (±14h covers all zones)
     const startOfDay = new Date(`${date}T00:00:00.000Z`)
     startOfDay.setUTCHours(startOfDay.getUTCHours() - 14)
     const endOfDay = new Date(`${date}T23:59:59.999Z`)
     endOfDay.setUTCHours(endOfDay.getUTCHours() + 14)
 
-    // Get ALL recent activity (no date filter) to see if user's activities exist at all
     const response = await driveActivity.activity.query({
       requestBody: {
+        filter: `time >= "${startOfDay.toISOString()}" AND time <= "${endOfDay.toISOString()}"`,
         pageSize: 200,
       },
     })
 
     const activities = response.data.activities || []
-    console.log(`[Drive] API returned ${activities.length} activities`)
-
     const docEdits: any[] = []
-    let skippedNotMe = 0
 
     for (const activity of activities) {
-      // Check if actor's personName matches my People ID
+      // Only include activities by the current user
       const isMe = activity.actors?.some((actor: any) =>
         actor.user?.knownUser?.personName === myPeopleId
       )
-
-      if (!isMe) {
-        skippedNotMe++
-        continue
-      }
+      if (!isMe) continue
 
       const target = activity.targets?.[0]?.driveItem
       if (!target) continue
@@ -156,19 +148,18 @@ export async function getDocActivity(accessToken: string, date: string, timezone
       })
     }
 
-    // Log all unique People IDs we found
-    const allPeopleIds = new Set<string>()
-    for (const activity of activities) {
-      for (const actor of activity.actors || []) {
-        if (actor.user?.knownUser?.personName) {
-          allPeopleIds.add(actor.user.knownUser.personName)
-        }
-      }
-    }
-    console.log(`[Drive] All People IDs found: ${Array.from(allPeopleIds).join(", ")}`)
-    console.log(`[Drive] My ID: ${myPeopleId}`)
-    console.log(`[Drive] Skipped ${skippedNotMe} not by me, returning ${docEdits.length}`)
-    return docEdits
+    // Dedupe by title + hour (in user's timezone)
+    const seen = new Set<string>()
+    const deduped = docEdits.filter((edit) => {
+      const hour = parseInt(edit.timestamp.toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: timezone }))
+      const key = `${edit.title}-${hour}`
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    })
+
+    console.log(`[Drive] Found ${deduped.length} doc activities`)
+    return deduped
   } catch (error: any) {
     console.error("[Drive] Error:", error?.message)
     return []
