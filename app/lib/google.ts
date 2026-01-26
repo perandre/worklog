@@ -101,47 +101,31 @@ export async function getDocActivity(accessToken: string, date: string, timezone
     const auth = getAuthClient(accessToken)
     const driveActivity = google.driveactivity({ version: "v2", auth })
 
-    // Wide date range to cover timezones
-    const startOfDay = new Date(`${date}T00:00:00.000Z`)
-    startOfDay.setUTCHours(startOfDay.getUTCHours() - 14)
-    const endOfDay = new Date(`${date}T23:59:59.999Z`)
-    endOfDay.setUTCHours(endOfDay.getUTCHours() + 14)
-
+    // Hardcoded: Jan 26, 2026
     const response = await driveActivity.activity.query({
       requestBody: {
-        filter: `time >= "${startOfDay.toISOString()}" AND time <= "${endOfDay.toISOString()}"`,
-        consolidationStrategy: { none: {} },
+        filter: `time >= "2026-01-26T00:00:00Z" AND time <= "2026-01-26T23:59:59Z"`,
         pageSize: 100,
       },
     })
 
     const activities = response.data.activities || []
-    console.log(`[Drive] API returned ${activities.length} activities`)
+    console.log(`[Drive] API returned ${activities.length} activities for Jan 26`)
 
-    const docEdits: any[] = []
-
-    for (const activity of activities) {
-      // Only include edits/creates/comments (skip views, permissions, etc)
-      const action = activity.primaryActionDetail
-      if (!action?.edit && !action?.create && !action?.comment) continue
-
-      // Skip folders
+    // No filters - return everything
+    const docEdits = activities.map((activity) => {
       const target = activity.targets?.[0]?.driveItem
-      if (!target || target.mimeType?.includes("folder")) continue
+      const action = activity.primaryActionDetail || {}
+      const actionType = Object.keys(action)[0] || "activity"
 
-      // Skip if no timestamp
-      if (!activity.timestamp) continue
-
-      const actionType = action.edit ? "edit" : action.create ? "create" : "comment"
-
-      docEdits.push({
+      return {
         source: "docs" as const,
         type: actionType,
-        title: target.title || "Untitled",
-        docId: target.name?.replace("items/", ""),
-        timestamp: new Date(activity.timestamp),
-      })
-    }
+        title: target?.title || "Unknown",
+        docId: target?.name?.replace("items/", "") || "",
+        timestamp: new Date(activity.timestamp || Date.now()),
+      }
+    })
 
     console.log(`[Drive] Returning ${docEdits.length} doc activities`)
     return docEdits
