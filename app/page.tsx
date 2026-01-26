@@ -192,7 +192,7 @@ function WorklogApp() {
 function DayView({ data, date, isToday }: { data: any; date: string; isToday: boolean }) {
   return (
     <div className="week-container" style={{ justifyContent: "center" }}>
-      <div className="day-column" style={{ flex: "0 0 500px", maxWidth: 500 }}>
+      <div className="day-column">
         <div className={`day-header ${isToday ? "today" : ""}`}>{formatDate(date)}</div>
         <div className="timeline">
           {Array.from({ length: 11 }, (_, i) => i + 7).map((hour) => {
