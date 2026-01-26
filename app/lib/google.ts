@@ -96,159 +96,63 @@ export async function getEmails(accessToken: string, date: string) {
 }
 
 export async function getDocActivity(accessToken: string, date: string, timezone = "UTC", userEmail?: string) {
-  console.log(`[Drive Activity] START - ${date} (${timezone}) user: ${userEmail}`)
-
-  if (!accessToken) {
-    console.error("[Drive Activity] No access token!")
-    return []
-  }
-  const auth = getAuthClient(accessToken)
-  const driveActivity = google.driveactivity({ version: "v2", auth })
-
-  // Create date in user's timezone, then convert to UTC for API filter
-  const localMidnight = new Date(`${date}T00:00:00`)
-  const localEndOfDay = new Date(`${date}T23:59:59.999`)
-
-  // Get timezone offset and adjust
-  const formatter = new Intl.DateTimeFormat("en-US", { timeZone: timezone, timeZoneName: "shortOffset" })
-  const tzParts = formatter.formatToParts(localMidnight)
-  const offsetStr = tzParts.find(p => p.type === "timeZoneName")?.value || "+00:00"
-  const offsetMatch = offsetStr.match(/GMT([+-]\d+)?/)
-  const offsetHours = offsetMatch?.[1] ? parseInt(offsetMatch[1]) : 0
-
-  const startOfDay = new Date(localMidnight.getTime() - offsetHours * 60 * 60 * 1000)
-  const endOfDay = new Date(localEndOfDay.getTime() - offsetHours * 60 * 60 * 1000)
-
   try {
-    let allActivities: any[] = []
-    let pageToken: string | undefined
+    console.log(`[Drive] Fetching for ${date}`)
+    const auth = getAuthClient(accessToken)
+    const driveActivity = google.driveactivity({ version: "v2", auth })
 
-    do {
-      console.log(`[Drive Activity] Querying API: ${startOfDay.toISOString()} to ${endOfDay.toISOString()}`)
-      const response = await driveActivity.activity.query({
-        requestBody: {
-          filter: `time >= "${startOfDay.toISOString()}" AND time <= "${endOfDay.toISOString()}"`,
-          consolidationStrategy: { none: {} },
-          pageSize: 100,
-          pageToken,
-        },
-      })
+    // Wide date range to cover all timezones
+    const startOfDay = new Date(`${date}T00:00:00.000Z`)
+    startOfDay.setUTCHours(startOfDay.getUTCHours() - 14)
+    const endOfDay = new Date(`${date}T23:59:59.999Z`)
+    endOfDay.setUTCHours(endOfDay.getUTCHours() + 14)
 
-      allActivities = allActivities.concat(response.data.activities || [])
-      pageToken = response.data.nextPageToken || undefined
-    } while (pageToken)
+    const response = await driveActivity.activity.query({
+      requestBody: {
+        filter: `time >= "${startOfDay.toISOString()}" AND time <= "${endOfDay.toISOString()}"`,
+        consolidationStrategy: { none: {} },
+        pageSize: 50,
+      },
+    })
 
-    console.log(`[Drive Activity] Fetched ${allActivities.length} activities`)
-
-    // Log activities with actors for debugging
-    if (allActivities.length > 0) {
-      const summary = allActivities.slice(0, 3).map((a: any) => ({
-        action: Object.keys(a.primaryActionDetail || {})[0],
-        target: a.targets?.[0]?.driveItem?.title,
-        actors: a.actors?.map((actor: any) => actor.user?.knownUser || actor.user?.deletedUser || "unknown"),
-        isCurrentUser: a.actors?.some((actor: any) => actor.user?.knownUser?.isCurrentUser),
-      }))
-      console.log(`[Drive Activity] Sample:`, JSON.stringify(summary, null, 2))
-    }
+    const activities = response.data.activities || []
+    console.log(`[Drive] API returned ${activities.length} activities`)
 
     const docEdits: any[] = []
 
-    let skippedNotUser = 0
-    let skippedNoAction = 0
-    let skippedNoTarget = 0
-    let skippedFolder = 0
-    let skippedNoTimestamp = 0
+    for (const activity of activities) {
+      // Only include activities by the current user
+      const isCurrentUser = activity.actors?.some(
+        (actor: any) => actor.user?.knownUser?.isCurrentUser === true
+      )
+      if (!isCurrentUser) continue
 
-    for (const activity of allActivities) {
-      // Filter to only activities by the current user
-      if (userEmail) {
-        const isUserActivity = activity.actors?.some((actor: any) =>
-          actor.user?.knownUser?.personName?.includes(userEmail) ||
-          actor.user?.knownUser?.isCurrentUser === true
-        )
-        if (!isUserActivity) {
-          skippedNotUser++
-          continue
-        }
-      }
-
+      // Get action type
       const action = activity.primaryActionDetail
-      if (!action) {
-        skippedNoAction++
-        continue
-      }
+      if (!action) continue
+      const actionType = action.edit ? "edit" : action.comment ? "comment" : action.create ? "create" : null
+      if (!actionType) continue
 
-      const actionType = action.edit
-        ? "edit"
-        : action.comment
-          ? "comment"
-          : action.create
-            ? "create"
-            : action.delete
-              ? "delete"
-              : action.rename
-                ? "rename"
-                : action.move
-                  ? "move"
-                  : null
-      if (!actionType) {
-        skippedNoAction++
-        continue
-      }
+      // Get target
+      const target = activity.targets?.[0]?.driveItem
+      if (!target || target.mimeType?.includes("folder")) continue
 
-      for (const target of activity.targets || []) {
-        if (!target?.driveItem) {
-          skippedNoTarget++
-          continue
-        }
+      const timestamp = activity.timestamp
+      if (!timestamp) continue
 
-        const driveItem = target.driveItem
-        if (driveItem.mimeType?.includes("folder")) {
-          skippedFolder++
-          continue
-        }
-
-        const timestamp = activity.timestamp
-        if (!timestamp) {
-          skippedNoTimestamp++
-          continue
-        }
-
-        docEdits.push({
-          source: "docs" as const,
-          type: actionType,
-          title: driveItem.title || "Untitled",
-          docId: driveItem.name?.replace("items/", ""),
-          timestamp: new Date(timestamp),
-        })
-      }
+      docEdits.push({
+        source: "docs" as const,
+        type: actionType,
+        title: target.title || "Untitled",
+        docId: target.name?.replace("items/", ""),
+        timestamp: new Date(timestamp),
+      })
     }
 
-    console.log(`[Drive Activity] Skipped: notUser=${skippedNotUser}, noAction=${skippedNoAction}, noTarget=${skippedNoTarget}, folder=${skippedFolder}, noTimestamp=${skippedNoTimestamp}`)
-
-    console.log(`[Drive Activity] After processing: ${docEdits.length} edits`)
-    if (docEdits.length > 0) {
-      console.log(`[Drive Activity] First few edits:`, docEdits.slice(0, 3).map(e => ({
-        title: e.title,
-        type: e.type,
-        hour: parseInt(e.timestamp.toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: timezone }))
-      })))
-    }
-
-    // Dedupe by title + hour (in user's timezone)
-    const seen = new Set<string>()
-    const result = docEdits.filter((edit) => {
-      const hour = parseInt(edit.timestamp.toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: timezone }))
-      const key = `${edit.title}-${hour}`
-      if (seen.has(key)) return false
-      seen.add(key)
-      return true
-    })
-    console.log(`[Drive Activity] After dedupe: ${result.length} edits`)
-    return result
+    console.log(`[Drive] Found ${docEdits.length} edits by current user`)
+    return docEdits
   } catch (error: any) {
-    console.error("[Drive Activity] ERROR:", error?.message || error)
-    console.error("[Drive Activity] Full error:", JSON.stringify(error, Object.getOwnPropertyNames(error)))
+    console.error("[Drive] Error:", error?.message || error)
     return []
   }
 }
