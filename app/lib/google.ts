@@ -6,6 +6,75 @@ function getAuthClient(accessToken: string) {
   return auth
 }
 
+function getTimezoneOffsetMinutes(date: Date, timeZone: string) {
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour12: false,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  })
+  const parts = formatter.formatToParts(date)
+  const value = (type: string) => parts.find((p) => p.type === type)?.value || "00"
+  const asUTC = Date.UTC(
+    Number(value("year")),
+    Number(value("month")) - 1,
+    Number(value("day")),
+    Number(value("hour")),
+    Number(value("minute")),
+    Number(value("second"))
+  )
+  return (asUTC - date.getTime()) / 60000
+}
+
+function zonedTimeToUtc(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number,
+  ms: number,
+  timeZone: string
+) {
+  let guess = Date.UTC(year, month - 1, day, hour, minute, second, ms)
+  for (let i = 0; i < 2; i += 1) {
+    const offsetMinutes = getTimezoneOffsetMinutes(new Date(guess), timeZone)
+    const next = Date.UTC(year, month - 1, day, hour, minute, second, ms) - offsetMinutes * 60000
+    if (Math.abs(next - guess) < 1000) {
+      guess = next
+      break
+    }
+    guess = next
+  }
+  return new Date(guess)
+}
+
+function getZonedDayRange(date: string, timeZone: string) {
+  const [year, month, day] = date.split("-").map((part) => Number(part))
+  const start = zonedTimeToUtc(year, month, day, 0, 0, 0, 0, timeZone)
+  const end = zonedTimeToUtc(year, month, day, 23, 59, 59, 999, timeZone)
+  return { start, end }
+}
+
+function getActionType(detail: any) {
+  if (!detail) return "activity"
+  if (detail.edit) return "edit"
+  if (detail.create) return "create"
+  if (detail.comment) return "comment"
+  if (detail.delete) return "delete"
+  if (detail.rename) return "rename"
+  if (detail.move) return "move"
+  if (detail.restore) return "restore"
+  if (detail.permissionChange) return "permissionChange"
+  if (detail.reference) return "reference"
+  const keys = Object.keys(detail)
+  return keys[0] || "activity"
+}
+
 export async function getCalendarEvents(accessToken: string, date: string) {
   console.log(`[Calendar] Fetching events for ${date}`)
   const auth = getAuthClient(accessToken)
@@ -97,43 +166,102 @@ export async function getEmails(accessToken: string, date: string) {
 
 export async function getDocActivity(accessToken: string, date: string, timezone = "UTC", userEmail?: string) {
   try {
+    console.log(`[Drive] Fetching activity for ${date} (${timezone})`)
     const auth = getAuthClient(accessToken)
     const driveActivity = google.driveactivity({ version: "v2", auth })
+    const { start, end } = getZonedDayRange(date, timezone)
+    const filter = `time >= "${start.toISOString()}" AND time <= "${end.toISOString()}"`
+    const debugEnabled = process.env.DEBUG_DRIVE_ACTIVITY === "1"
 
-    const response = await driveActivity.activity.query({
-      requestBody: { pageSize: 100 },
-    })
+    let myPeopleId: string | undefined
+    try {
+      const people = google.people({ version: "v1", auth })
+      const meResponse = await people.people.get({
+        resourceName: "people/me",
+        personFields: "metadata",
+      })
+      myPeopleId = meResponse.data.resourceName || undefined
+    } catch (error: any) {
+      console.warn("[Drive] Unable to resolve people/me:", error?.message || error)
+    }
 
-    const activities = response.data.activities || []
+    let activities: any[] = []
+    let pageToken: string | undefined
+    do {
+      const response = await driveActivity.activity.query({
+        requestBody: {
+          filter,
+          pageSize: 200,
+          pageToken,
+          consolidationStrategy: { none: {} },
+        },
+      })
+      activities = activities.concat(response.data.activities || [])
+      pageToken = response.data.nextPageToken || undefined
+    } while (pageToken)
+
+    console.log(`[Drive] API returned ${activities.length} activities for ${date}`)
+    if (debugEnabled) {
+      const sample = activities.slice(0, 5).map((activity) => ({
+        primaryAction: Object.keys(activity.primaryActionDetail || {})[0],
+        timestamp: activity.timestamp,
+        timeRange: activity.timeRange,
+        actors: (activity.actors || []).map((actor: any) => ({
+          isCurrentUser: actor.user?.knownUser?.isCurrentUser,
+          personName: actor.user?.knownUser?.personName,
+          deletedUser: !!actor.user?.deletedUser,
+          anonymized: !!actor.user?.unknownUser,
+        })),
+        targets: (activity.targets || []).map((target: any) => ({
+          title: target?.driveItem?.title,
+          mimeType: target?.driveItem?.mimeType,
+        })),
+      }))
+      console.log("[Drive] Debug sample:", JSON.stringify(sample, null, 2))
+      console.log(`[Drive] Debug filter: ${filter}`)
+    }
     const results: any[] = []
 
     for (const activity of activities) {
-      const target = activity.targets?.[0]?.driveItem
-      if (!target) continue
+      const hasActors = Array.isArray(activity.actors) && activity.actors.length > 0
+      const isCurrentUser = activity.actors?.some((actor: any) => {
+        const knownUser = actor.user?.knownUser
+        return knownUser?.isCurrentUser === true || (myPeopleId && knownUser?.personName === myPeopleId)
+      })
+      if (hasActors && !isCurrentUser) continue
 
-      const timestamp = new Date(activity.timestamp || Date.now())
+      const timestampRaw =
+        activity.timestamp || activity.timeRange?.endTime || activity.timeRange?.startTime
+      if (!timestampRaw) continue
+      const timestamp = new Date(timestampRaw)
 
       // Filter by date (in user's timezone)
       const activityDate = timestamp.toLocaleDateString("en-CA", { timeZone: timezone })
       if (activityDate !== date) continue
 
-      const action = activity.primaryActionDetail || {}
-      const actionType = Object.keys(action)[0] || "edit"
+      const actionDetail = activity.primaryActionDetail || activity.actions?.[0]?.detail
+      const actionType = getActionType(actionDetail)
 
-      results.push({
-        source: "docs" as const,
-        type: actionType,
-        title: target.title || "Untitled",
-        docId: target.name?.replace("items/", "") || "",
-        timestamp,
-      })
+      for (const target of activity.targets || []) {
+        const driveItem = target?.driveItem
+        if (!driveItem) continue
+        if (driveItem.mimeType?.includes("folder")) continue
+
+        results.push({
+          source: "docs" as const,
+          type: actionType,
+          title: driveItem.title || "Untitled",
+          docId: driveItem.name?.replace("items/", "") || "",
+          timestamp,
+        })
+      }
     }
 
-    // Dedupe by title + hour
+    // Dedupe by doc + action + hour
     const seen = new Set<string>()
     const deduped = results.filter((edit) => {
       const hour = parseInt(edit.timestamp.toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: timezone }))
-      const key = `${edit.title}-${hour}`
+      const key = `${edit.docId}-${edit.type}-${hour}`
       if (seen.has(key)) return false
       seen.add(key)
       return true
