@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
-import { AlertCircle, ChevronLeft, ChevronRight, Calendar, LogOut, Link2 } from "lucide-react"
+import { AlertCircle, ChevronLeft, ChevronRight, Calendar, LogOut, Link2, MessageSquare, X } from "lucide-react"
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + "T12:00:00")
@@ -54,8 +54,13 @@ function WorklogApp() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [serviceStatus, setServiceStatus] = useState({ google: false, slack: false })
+  const [slackBannerDismissed, setSlackBannerDismissed] = useState(true) // Start true to avoid flash
 
   const today = new Date().toISOString().split("T")[0]
+
+  useEffect(() => {
+    setSlackBannerDismissed(localStorage.getItem("slack-banner-dismissed") === "true")
+  }, [])
 
   useEffect(() => {
     fetch("/api/status")
@@ -212,6 +217,35 @@ function WorklogApp() {
             <AlertCircle className="h-4 w-4" />
             <AlertDescription>{error}</AlertDescription>
           </Alert>
+        )}
+
+        {!serviceStatus.slack && !slackBannerDismissed && (
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border bg-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-slack text-white">
+                <MessageSquare className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-medium">Connect Slack</p>
+                <p className="text-sm text-muted-foreground">See your messages alongside calendar events</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button asChild>
+                <a href="/api/auth/slack">Connect</a>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  localStorage.setItem("slack-banner-dismissed", "true")
+                  setSlackBannerDismissed(true)
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
         )}
 
         {loading ? (
