@@ -53,7 +53,8 @@ export async function GET(request: NextRequest) {
         return []
       }),
       getDocActivity(session.accessToken, date, timezone, session.user?.email || undefined).catch((err) => {
-        console.error("Docs fetch error:", err.message)
+        console.error("Docs fetch error:", err)
+        console.error("Docs fetch stack:", err?.stack)
         return []
       }),
       getMessages(date, slackToken).catch((err) => {

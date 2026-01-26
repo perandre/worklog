@@ -96,63 +96,36 @@ export async function getEmails(accessToken: string, date: string) {
 }
 
 export async function getDocActivity(accessToken: string, date: string, timezone = "UTC", userEmail?: string) {
+  console.log(`[Drive] Fetching for ${date}`)
   try {
-    console.log(`[Drive] Fetching for ${date}`)
     const auth = getAuthClient(accessToken)
-    const driveActivity = google.driveactivity({ version: "v2", auth })
+    const drive = google.drive({ version: "v3", auth })
 
-    // Wide date range to cover all timezones
+    // Get files modified on this date
     const startOfDay = new Date(`${date}T00:00:00.000Z`)
     startOfDay.setUTCHours(startOfDay.getUTCHours() - 14)
     const endOfDay = new Date(`${date}T23:59:59.999Z`)
     endOfDay.setUTCHours(endOfDay.getUTCHours() + 14)
 
-    const response = await driveActivity.activity.query({
-      requestBody: {
-        filter: `time >= "${startOfDay.toISOString()}" AND time <= "${endOfDay.toISOString()}"`,
-        consolidationStrategy: { none: {} },
-        pageSize: 50,
-      },
+    const response = await drive.files.list({
+      q: `modifiedTime >= '${startOfDay.toISOString()}' and modifiedTime <= '${endOfDay.toISOString()}' and mimeType != 'application/vnd.google-apps.folder' and 'me' in owners`,
+      fields: "files(id, name, modifiedTime, mimeType)",
+      orderBy: "modifiedTime desc",
+      pageSize: 50,
     })
 
-    const activities = response.data.activities || []
-    console.log(`[Drive] API returned ${activities.length} activities`)
+    const files = response.data.files || []
+    console.log(`[Drive] Found ${files.length} files`)
 
-    const docEdits: any[] = []
-
-    for (const activity of activities) {
-      // Only include activities by the current user
-      const isCurrentUser = activity.actors?.some(
-        (actor: any) => actor.user?.knownUser?.isCurrentUser === true
-      )
-      if (!isCurrentUser) continue
-
-      // Get action type
-      const action = activity.primaryActionDetail
-      if (!action) continue
-      const actionType = action.edit ? "edit" : action.comment ? "comment" : action.create ? "create" : null
-      if (!actionType) continue
-
-      // Get target
-      const target = activity.targets?.[0]?.driveItem
-      if (!target || target.mimeType?.includes("folder")) continue
-
-      const timestamp = activity.timestamp
-      if (!timestamp) continue
-
-      docEdits.push({
-        source: "docs" as const,
-        type: actionType,
-        title: target.title || "Untitled",
-        docId: target.name?.replace("items/", ""),
-        timestamp: new Date(timestamp),
-      })
-    }
-
-    console.log(`[Drive] Found ${docEdits.length} edits by current user`)
-    return docEdits
+    return files.map((file) => ({
+      source: "docs" as const,
+      type: "edit" as const,
+      title: file.name || "Untitled",
+      docId: file.id,
+      timestamp: new Date(file.modifiedTime || ""),
+    }))
   } catch (error: any) {
-    console.error("[Drive] Error:", error?.message || error)
+    console.error("[Drive] Error:", error?.message)
     return []
   }
 }
