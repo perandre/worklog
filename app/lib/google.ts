@@ -98,31 +98,16 @@ export async function getEmails(accessToken: string, date: string) {
 export async function getDocActivity(accessToken: string, date: string, timezone = "UTC", userEmail?: string) {
   try {
     const auth = getAuthClient(accessToken)
-
-    // Get current user's People ID
-    const people = google.people({ version: "v1", auth })
-    const meResponse = await people.people.get({
-      resourceName: "people/me",
-      personFields: "metadata",
-    })
-    const myPeopleId = meResponse.data.resourceName
-
-    // Fetch recent activity
     const driveActivity = google.driveactivity({ version: "v2", auth })
+
     const response = await driveActivity.activity.query({
-      requestBody: { pageSize: 200 },
+      requestBody: { pageSize: 100 },
     })
 
     const activities = response.data.activities || []
     const results: any[] = []
 
     for (const activity of activities) {
-      // Only my activities
-      const isMe = activity.actors?.some((actor: any) =>
-        actor.user?.knownUser?.personName === myPeopleId
-      )
-      if (!isMe) continue
-
       const target = activity.targets?.[0]?.driveItem
       if (!target) continue
 
