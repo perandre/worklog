@@ -1,5 +1,6 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
+import type { JWT } from "next-auth/jwt"
 
 declare module "next-auth" {
   interface Session {
@@ -8,13 +9,11 @@ declare module "next-auth" {
   }
 }
 
-declare module "next-auth/jwt" {
-  interface JWT {
-    accessToken?: string
-    refreshToken?: string
-    expiresAt?: number
-    error?: string
-  }
+interface ExtendedJWT extends JWT {
+  accessToken?: string
+  refreshToken?: string
+  expiresAt?: number
+  error?: string
 }
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
@@ -39,20 +38,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, account }) {
+    async jwt({ token, account }): Promise<ExtendedJWT> {
+      const extToken = token as ExtendedJWT
+
       // Initial sign in
       if (account) {
         return {
-          ...token,
-          accessToken: account.access_token,
-          refreshToken: account.refresh_token,
-          expiresAt: account.expires_at,
+          ...extToken,
+          accessToken: account.access_token as string,
+          refreshToken: account.refresh_token as string,
+          expiresAt: account.expires_at as number,
         }
       }
 
       // Return token if not expired
-      if (Date.now() < (token.expiresAt ?? 0) * 1000) {
-        return token
+      if (Date.now() < (extToken.expiresAt ?? 0) * 1000) {
+        return extToken
       }
 
       // Refresh the token
@@ -64,7 +65,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             client_id: process.env.GOOGLE_CLIENT_ID!,
             client_secret: process.env.GOOGLE_CLIENT_SECRET!,
             grant_type: "refresh_token",
-            refresh_token: token.refreshToken!,
+            refresh_token: extToken.refreshToken!,
           }),
         })
 
@@ -73,19 +74,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!response.ok) throw tokens
 
         return {
-          ...token,
+          ...extToken,
           accessToken: tokens.access_token,
           expiresAt: Math.floor(Date.now() / 1000 + tokens.expires_in),
-          refreshToken: tokens.refresh_token ?? token.refreshToken,
+          refreshToken: tokens.refresh_token ?? extToken.refreshToken,
         }
       } catch (error) {
         console.error("Error refreshing token:", error)
-        return { ...token, error: "RefreshTokenError" }
+        return { ...extToken, error: "RefreshTokenError" }
       }
     },
     async session({ session, token }) {
-      session.accessToken = token.accessToken
-      session.error = token.error
+      const extToken = token as ExtendedJWT
+      session.accessToken = extToken.accessToken
+      session.error = extToken.error
       return session
     },
   },
