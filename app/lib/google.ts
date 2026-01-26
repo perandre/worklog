@@ -95,8 +95,8 @@ export async function getEmails(accessToken: string, date: string) {
   return result
 }
 
-export async function getDocActivity(accessToken: string, date: string, timezone = "UTC") {
-  console.log(`[Drive Activity] Fetching activity for ${date} (${timezone})`)
+export async function getDocActivity(accessToken: string, date: string, timezone = "UTC", userEmail?: string) {
+  console.log(`[Drive Activity] Fetching activity for ${date} (${timezone}) user: ${userEmail}`)
   const auth = getAuthClient(accessToken)
   const driveActivity = google.driveactivity({ version: "v2", auth })
 
@@ -134,9 +134,31 @@ export async function getDocActivity(accessToken: string, date: string, timezone
 
     console.log(`[Drive Activity] Fetched ${allActivities.length} activities`)
 
+    // Log activities with actors for debugging
+    if (allActivities.length > 0) {
+      const summary = allActivities.slice(0, 3).map((a: any) => ({
+        action: Object.keys(a.primaryActionDetail || {})[0],
+        target: a.targets?.[0]?.driveItem?.title,
+        actors: a.actors?.map((actor: any) => actor.user?.knownUser || actor.user?.deletedUser || "unknown"),
+        isCurrentUser: a.actors?.some((actor: any) => actor.user?.knownUser?.isCurrentUser),
+      }))
+      console.log(`[Drive Activity] Sample:`, JSON.stringify(summary, null, 2))
+    }
+
     const docEdits: any[] = []
 
     for (const activity of allActivities) {
+      // Filter to only activities by the current user
+      if (userEmail) {
+        const isUserActivity = activity.actors?.some((actor: any) =>
+          actor.user?.knownUser?.personName?.includes(userEmail) ||
+          actor.user?.knownUser?.isCurrentUser === true
+        )
+        if (!isUserActivity) {
+          continue
+        }
+      }
+
       const action = activity.primaryActionDetail
       if (!action) continue
 
@@ -185,8 +207,11 @@ export async function getDocActivity(accessToken: string, date: string, timezone
     })
     console.log(`[Drive Activity] Found ${result.length} doc edits after dedupe`)
     return result
-  } catch (error) {
-    console.error("Error fetching doc activity:", error)
+  } catch (error: any) {
+    console.error("Error fetching doc activity:", error?.message || error)
+    if (error?.response?.data) {
+      console.error("API error details:", JSON.stringify(error.response.data, null, 2))
+    }
     return []
   }
 }

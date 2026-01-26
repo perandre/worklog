@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
         console.error("Email fetch error:", err.message)
         return []
       }),
-      getDocActivity(session.accessToken, date, timezone).catch((err) => {
+      getDocActivity(session.accessToken, date, timezone, session.user?.email || undefined).catch((err) => {
         console.error("Docs fetch error:", err.message)
         return []
       }),
