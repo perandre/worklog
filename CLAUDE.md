@@ -1,4 +1,4 @@
-# Worklog ⏱️
+# Worklog
 
 A summary of your day - shows hour-by-hour activity from Google (Calendar, Gmail, Docs) and Slack.
 
@@ -14,48 +14,50 @@ A summary of your day - shows hour-by-hour activity from Google (Calendar, Gmail
 ```
 app/
 ├── api/
-│   ├── auth/[...nextauth]/route.ts  # NextAuth handler
-│   ├── activities/route.ts          # GET /api/activities?date=YYYY-MM-DD
-│   └── status/route.ts              # GET /api/status
+│   ├── auth/
+│   │   ├── [...nextauth]/route.ts  # NextAuth handler
+│   │   └── slack/
+│   │       ├── route.ts            # GET - Initiates Slack OAuth
+│   │       ├── callback/route.ts   # GET - Handles OAuth callback
+│   │       └── disconnect/route.ts # POST - Clears Slack token
+│   ├── activities/route.ts         # GET /api/activities?date=YYYY-MM-DD
+│   └── status/route.ts             # GET /api/status
 ├── components/
-│   └── Activity.tsx                 # Activity item component
+│   └── Activity.tsx                # Activity item component
 ├── lib/
-│   ├── auth.ts                      # NextAuth config + Google OAuth
-│   ├── google.ts                    # Calendar, Gmail, Drive Activity APIs
-│   ├── slack.ts                     # Slack search API + user resolution
-│   └── aggregator.ts                # Hour bucketing logic
-├── globals.css                      # All styles
-├── layout.tsx                       # Root layout
-└── page.tsx                         # Main page (client component)
+│   ├── auth.ts                     # NextAuth config + Google OAuth
+│   ├── google.ts                   # Calendar, Gmail, Drive Activity APIs
+│   ├── slack.ts                    # Slack search API + user resolution
+│   └── aggregator.ts               # Hour bucketing logic
+├── globals.css                     # All styles
+├── layout.tsx                      # Root layout
+└── page.tsx                        # Main page (client component)
 ```
 
-## Key Implementation Details
+## Auth
 
-### Google Scopes (requested via NextAuth)
-- `gmail.readonly` - Fetch emails
-- `calendar.readonly` - Fetch calendar events
-- `drive.activity.readonly` - Fetch doc/sheet edits, creates, deletes
+### Google (via NextAuth)
+- Scopes: `gmail.readonly`, `calendar.readonly`, `drive.activity.readonly`
+- Tokens stored in encrypted JWT cookie
+- Auto-refresh on expiry
 
-### Slack Scopes (User Token)
-- `search:read` - Search user's messages
-- `users:read` - Resolve user IDs to names
-- `im:read` - Get DM channel info
+### Slack (custom OAuth)
+- Scopes: `search:read`, `users:read`, `im:read`
+- User token stored in HTTP-only cookie (`slack_token`)
+- Each user authenticates with their own Slack account
 
-### Auth Flow
-- NextAuth handles Google OAuth with JWT strategy
-- Access/refresh tokens stored in encrypted JWT cookie
-- Auto-refresh when token expires
+## Data Flow
 
-### Data Flow
 1. `page.tsx` fetches `/api/activities?date=YYYY-MM-DD`
-2. API route gets session, extracts access token
+2. API route gets Google token from session, Slack token from cookie
 3. Calls Google/Slack APIs in parallel
-4. `aggregator.ts` buckets by hour (7-18)
+4. `aggregator.ts` buckets activities by hour (7-18)
 5. Returns `{ hours, summary, sources }`
 
-### Display Rules
+## Display Rules
+
 - Work hours: 7 AM - 6 PM
-- Calendar events: All shown per hour (primaries array)
+- Calendar events: All shown per hour (`primaries` array)
 - Communications: Max 6/hour (day view), 4/hour (week view)
 - Slack DMs: No `#` prefix, channels get `#` prefix
 - Docs: Shows edit/create/delete/rename/move actions
@@ -67,9 +69,15 @@ npm install
 npm run dev  # http://localhost:3000
 ```
 
-## Deploy to Vercel
+Note: Slack OAuth requires HTTPS. For local Slack testing, use ngrok or deploy to Vercel first.
 
-1. Push to GitHub
-2. Import in Vercel
-3. Add environment variables (NEXTAUTH_SECRET, GOOGLE_*, SLACK_*)
-4. Update Google OAuth redirect URI to production URL
+## Environment Variables
+
+```
+NEXTAUTH_URL=https://your-app.vercel.app
+NEXTAUTH_SECRET=random-secret
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+SLACK_CLIENT_ID=...
+SLACK_CLIENT_SECRET=...
+```
