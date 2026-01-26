@@ -99,6 +99,16 @@ export async function getDocActivity(accessToken: string, date: string, timezone
   console.log(`[Drive] Fetching activity for ${date}`)
   try {
     const auth = getAuthClient(accessToken)
+
+    // First, get the current user's People ID
+    const people = google.people({ version: "v1", auth })
+    const meResponse = await people.people.get({
+      resourceName: "people/me",
+      personFields: "metadata",
+    })
+    const myPeopleId = meResponse.data.resourceName // e.g., "people/123456789"
+    console.log(`[Drive] My People ID: ${myPeopleId}`)
+
     const driveActivity = google.driveactivity({ version: "v2", auth })
 
     // Date range with timezone buffer
@@ -117,23 +127,13 @@ export async function getDocActivity(accessToken: string, date: string, timezone
     const activities = response.data.activities || []
     console.log(`[Drive] API returned ${activities.length} activities`)
 
-    // Log full actor details
-    if (activities.length > 0) {
-      const samples = activities.slice(0, 3).map((a: any) => ({
-        title: a.targets?.[0]?.driveItem?.title,
-        actorsFull: JSON.stringify(a.actors),
-      }))
-      console.log(`[Drive] Actor details:`, JSON.stringify(samples))
-      console.log(`[Drive] Looking for user: ${userEmail}`)
-    }
-
     const docEdits: any[] = []
     let skippedNotMe = 0
 
     for (const activity of activities) {
-      // Check if current user performed this action
+      // Check if actor's personName matches my People ID
       const isMe = activity.actors?.some((actor: any) =>
-        actor.user?.knownUser?.isCurrentUser === true
+        actor.user?.knownUser?.personName === myPeopleId
       )
 
       if (!isMe) {
