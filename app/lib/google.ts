@@ -118,6 +118,20 @@ function isActorCurrentUser(actor: any, myPeopleId?: string) {
   return !!(myPeopleId && knownUser.personName === myPeopleId)
 }
 
+async function logTokenScopes(accessToken: string) {
+  try {
+    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?access_token=${accessToken}`)
+    const data = await response.json()
+    if (data?.scope) {
+      console.log(`[Drive] Token scopes: ${data.scope}`)
+    } else {
+      console.log("[Drive] Token scopes unavailable.")
+    }
+  } catch (error: any) {
+    console.warn("[Drive] Failed to fetch token scopes:", error?.message || error)
+  }
+}
+
 export async function getCalendarEvents(accessToken: string, date: string) {
   console.log(`[Calendar] Fetching events for ${date}`)
   const auth = getAuthClient(accessToken)
@@ -243,6 +257,9 @@ export async function getDocActivity(accessToken: string, date: string, timezone
       } while (drivePageToken)
     } catch (error: any) {
       console.warn("[Drive] Unable to list shared drives:", error?.message || error)
+      if (debugEnabled) {
+        await logTokenScopes(accessToken)
+      }
     }
 
     const ancestorNames = [
