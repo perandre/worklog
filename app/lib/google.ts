@@ -229,7 +229,7 @@ export async function getDocActivity(accessToken: string, date: string, timezone
     }
 
     const drive = google.drive({ version: "v3", auth })
-    let sharedDrives: { id?: string; name?: string }[] = []
+    let sharedDrives: { id?: string | null; name?: string | null }[] = []
     try {
       let drivePageToken: string | undefined
       do {
@@ -247,7 +247,10 @@ export async function getDocActivity(accessToken: string, date: string, timezone
 
     const ancestorNames = [
       "items/root",
-      ...sharedDrives.map((driveItem) => `items/${driveItem.id}`),
+      ...sharedDrives
+        .map((driveItem) => driveItem.id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0)
+        .map((id) => `items/${id}`),
     ]
 
     let activities: any[] = []
