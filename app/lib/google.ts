@@ -244,6 +244,12 @@ export async function getDocActivity(accessToken: string, date: string, timezone
 
     const drive = google.drive({ version: "v3", auth })
     let sharedDrives: { id?: string | null; name?: string | null }[] = []
+    const manualSharedDriveIds = [
+      "0AG3_JYyDEdF8Uk9PVA",
+      "0AJLgFvwYQ-HjUk9PVA",
+      "0AMKqzebjGPISUk9PVA",
+      "0ABHkh1l4p68VUk9PVA",
+    ]
     try {
       let drivePageToken: string | undefined
       do {
@@ -262,13 +268,16 @@ export async function getDocActivity(accessToken: string, date: string, timezone
       }
     }
 
-    const ancestorNames = [
-      "items/root",
-      ...sharedDrives
-        .map((driveItem) => driveItem.id)
-        .filter((id): id is string => typeof id === "string" && id.length > 0)
-        .map((id) => `items/${id}`),
-    ]
+    const ancestorNames = Array.from(
+      new Set([
+        "items/root",
+        ...sharedDrives
+          .map((driveItem) => driveItem.id)
+          .filter((id): id is string => typeof id === "string" && id.length > 0)
+          .map((id) => `items/${id}`),
+        ...manualSharedDriveIds.map((id) => `items/${id}`),
+      ])
+    )
 
     let activities: any[] = []
     for (const ancestorName of ancestorNames) {
