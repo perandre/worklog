@@ -75,6 +75,49 @@ function getActionType(detail: any) {
   return keys[0] || "activity"
 }
 
+function extractActivityActors(activity: any) {
+  const actors: any[] = []
+  if (Array.isArray(activity.actors)) {
+    actors.push(...activity.actors)
+  }
+  return actors
+}
+
+function extractActionActors(action: any, fallbackActors: any[]) {
+  const actors: any[] = []
+  if (action?.actor) actors.push(action.actor)
+  if (Array.isArray(action?.actors)) actors.push(...action.actors)
+  return actors.length > 0 ? actors : fallbackActors
+}
+
+function extractTargets(activity: any, action?: any) {
+  if (action?.target) return [action.target]
+  if (Array.isArray(action?.targets) && action.targets.length > 0) return action.targets
+  return activity.targets || []
+}
+
+function extractTimestamp(activity: any, action?: any) {
+  return (
+    action?.timestamp ||
+    action?.timeRange?.endTime ||
+    action?.timeRange?.startTime ||
+    activity.timestamp ||
+    activity.timeRange?.endTime ||
+    activity.timeRange?.startTime
+  )
+}
+
+function getKnownUser(actor: any) {
+  return actor?.user?.knownUser || actor?.impersonation?.impersonatedUser?.knownUser
+}
+
+function isActorCurrentUser(actor: any, myPeopleId?: string) {
+  const knownUser = getKnownUser(actor)
+  if (!knownUser) return false
+  if (knownUser.isCurrentUser === true) return true
+  return !!(myPeopleId && knownUser.personName === myPeopleId)
+}
+
 export async function getCalendarEvents(accessToken: string, date: string) {
   console.log(`[Calendar] Fetching events for ${date}`)
   const auth = getAuthClient(accessToken)
@@ -170,7 +213,7 @@ export async function getDocActivity(accessToken: string, date: string, timezone
     const auth = getAuthClient(accessToken)
     const driveActivity = google.driveactivity({ version: "v2", auth })
     const { start, end } = getZonedDayRange(date, timezone)
-    const filter = `time >= "${start.toISOString()}" AND time <= "${end.toISOString()}"`
+    const filter = `detail.action_detail_case:(EDIT CREATE COMMENT) time >= "${start.toISOString()}" AND time <= "${end.toISOString()}"`
     const debugEnabled = process.env.DEBUG_DRIVE_ACTIVITY === "1"
 
     let myPeopleId: string | undefined
@@ -185,20 +228,49 @@ export async function getDocActivity(accessToken: string, date: string, timezone
       console.warn("[Drive] Unable to resolve people/me:", error?.message || error)
     }
 
+    const drive = google.drive({ version: "v3", auth })
+    let sharedDrives: { id?: string; name?: string }[] = []
+    try {
+      let drivePageToken: string | undefined
+      do {
+        const driveResponse = await drive.drives.list({
+          pageSize: 100,
+          pageToken: drivePageToken,
+          fields: "nextPageToken, drives(id, name)",
+        })
+        sharedDrives = sharedDrives.concat(driveResponse.data.drives || [])
+        drivePageToken = driveResponse.data.nextPageToken || undefined
+      } while (drivePageToken)
+    } catch (error: any) {
+      console.warn("[Drive] Unable to list shared drives:", error?.message || error)
+    }
+
+    const ancestorNames = [
+      "items/root",
+      ...sharedDrives.map((driveItem) => `items/${driveItem.id}`),
+    ]
+
     let activities: any[] = []
-    let pageToken: string | undefined
-    do {
-      const response = await driveActivity.activity.query({
-        requestBody: {
-          filter,
-          pageSize: 200,
-          pageToken,
-          consolidationStrategy: { none: {} },
-        },
-      })
-      activities = activities.concat(response.data.activities || [])
-      pageToken = response.data.nextPageToken || undefined
-    } while (pageToken)
+    for (const ancestorName of ancestorNames) {
+      let pageToken: string | undefined
+      do {
+        const response = await driveActivity.activity.query({
+          requestBody: {
+            ancestorName,
+            filter,
+            pageSize: 200,
+            pageToken,
+            consolidationStrategy: { none: {} },
+          },
+        })
+        activities = activities.concat(response.data.activities || [])
+        pageToken = response.data.nextPageToken || undefined
+      } while (pageToken)
+
+      if (debugEnabled) {
+        console.log(`[Drive] Ancestor ${ancestorName} returned ${(activities || []).length} total activities so far`)
+      }
+    }
 
     console.log(`[Drive] API returned ${activities.length} activities for ${date}`)
     if (debugEnabled) {
@@ -206,9 +278,10 @@ export async function getDocActivity(accessToken: string, date: string, timezone
         primaryAction: Object.keys(activity.primaryActionDetail || {})[0],
         timestamp: activity.timestamp,
         timeRange: activity.timeRange,
-        actors: (activity.actors || []).map((actor: any) => ({
-          isCurrentUser: actor.user?.knownUser?.isCurrentUser,
-          personName: actor.user?.knownUser?.personName,
+        actors: extractActivityActors(activity).map((actor: any) => ({
+          type: Object.keys(actor || {})[0],
+          isCurrentUser: getKnownUser(actor)?.isCurrentUser,
+          personName: getKnownUser(actor)?.personName,
           deletedUser: !!actor.user?.deletedUser,
           anonymized: !!actor.user?.unknownUser,
         })),
@@ -220,47 +293,51 @@ export async function getDocActivity(accessToken: string, date: string, timezone
       console.log("[Drive] Debug sample:", JSON.stringify(sample, null, 2))
       console.log(`[Drive] Debug filter: ${filter}`)
     }
-    const rawResults: any[] = []
-    const filteredResults: any[] = []
+    const results: any[] = []
 
     for (const activity of activities) {
-      const hasActors = Array.isArray(activity.actors) && activity.actors.length > 0
-      const isCurrentUser = activity.actors?.some((actor: any) => {
-        const knownUser = actor.user?.knownUser
-        return knownUser?.isCurrentUser === true || (myPeopleId && knownUser?.personName === myPeopleId)
-      })
-      const includeByActor = !hasActors || isCurrentUser === true
+      const actions = Array.isArray(activity.actions) && activity.actions.length > 0
+        ? activity.actions
+        : [undefined]
 
-      const timestampRaw =
-        activity.timestamp || activity.timeRange?.endTime || activity.timeRange?.startTime
-      if (!timestampRaw) continue
-      const timestamp = new Date(timestampRaw)
+      const activityActors = extractActivityActors(activity)
 
-      const actionDetail = activity.primaryActionDetail || activity.actions?.[0]?.detail
-      const actionType = getActionType(actionDetail)
+      for (const action of actions) {
+        const actionActors = extractActionActors(action, activityActors)
+        if (actionActors.length === 0) continue
+        const isCurrentUser = actionActors.some((actor: any) => isActorCurrentUser(actor, myPeopleId))
+        if (!isCurrentUser) continue
 
-      for (const target of activity.targets || []) {
-        const driveItem = target?.driveItem
-        if (!driveItem) continue
-        if (driveItem.mimeType?.includes("folder")) continue
+        const timestampRaw = extractTimestamp(activity, action)
+        if (!timestampRaw) continue
+        const timestamp = new Date(timestampRaw)
 
-        const entry = {
-          source: "docs" as const,
-          type: actionType,
-          title: driveItem.title || "Untitled",
-          docId: driveItem.name?.replace("items/", "") || "",
-          timestamp,
-        }
-        rawResults.push(entry)
-        if (includeByActor) {
-          filteredResults.push(entry)
+        const actionDetail = action?.detail || activity.primaryActionDetail
+        const actionType = getActionType(actionDetail)
+
+        const targets = extractTargets(activity, action)
+        for (const target of targets) {
+          const driveItem = target?.driveItem
+          if (!driveItem) continue
+          if (driveItem.mimeType?.includes("folder")) continue
+
+          const entry = {
+            source: "docs" as const,
+            type: actionType,
+            title: driveItem.title || "Untitled",
+            docId: driveItem.name?.replace("items/", "") || "",
+            timestamp,
+          }
+          results.push(entry)
         }
       }
     }
 
-    const results = filteredResults.length > 0 ? filteredResults : rawResults
-    if (filteredResults.length === 0 && rawResults.length > 0) {
-      console.warn("[Drive] Actor filter removed all results; returning unfiltered activity list.")
+    if (!myPeopleId) {
+      console.warn("[Drive] No people/me id available; cannot match actors reliably.")
+    }
+    if (results.length === 0) {
+      console.warn("[Drive] No matching activities for current user. Enable DEBUG_DRIVE_ACTIVITY=1 to inspect.")
     }
 
     // Dedupe by doc + action + hour
