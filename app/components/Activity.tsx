@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Mail, MessageSquare, FileText, Copy, Check } from "lucide-react"
+import { Calendar, Mail, MessageSquare, FileText, Copy, Check, Trello } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function truncateText(text: string, maxLen = 40) {
@@ -27,6 +27,7 @@ const sourceConfig = {
   gmail: { icon: Mail, color: "bg-gmail text-white" },
   slack: { icon: MessageSquare, color: "bg-slack text-white" },
   docs: { icon: FileText, color: "bg-docs text-white" },
+  trello: { icon: Trello, color: "bg-trello text-white" },
 } as const
 
 type Source = keyof typeof sourceConfig
@@ -72,6 +73,21 @@ export default function Activity({ activity, compact = false }: ActivityProps) {
            activity.type === "delete" ? "Deleted" :
            activity.type === "rename" ? "Renamed" :
            activity.type === "move" ? "Moved" : "Created"
+  } else if (activity.source === "trello") {
+    const board = activity.boardName ? ` · ${activity.boardName}` : ""
+    const list = activity.listName ? ` · ${activity.listName}` : ""
+    title = truncateText(activity.cardName || "Trello card", compact ? 25 : 40)
+    if (activity.type === "card_created") {
+      meta = `Created${board}${list}`
+    } else if (activity.type === "card_commented") {
+      meta = truncateText(activity.commentText ? `Commented: ${activity.commentText}` : `Commented${board}${list}`, compact ? 30 : 60)
+    } else if (activity.type === "card_moved") {
+      meta = `Moved${board}${list}`
+    } else if (activity.type === "card_archived") {
+      meta = `Archived${board}${list}`
+    } else {
+      meta = `Trello · ${activity.type}${board}${list}`
+    }
   }
 
   const copyDuration = () => {
