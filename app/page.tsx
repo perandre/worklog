@@ -53,13 +53,15 @@ function WorklogApp() {
   const [weekData, setWeekData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [serviceStatus, setServiceStatus] = useState({ google: false, slack: false })
+  const [serviceStatus, setServiceStatus] = useState({ google: false, slack: false, trello: false })
   const [slackBannerDismissed, setSlackBannerDismissed] = useState(true) // Start true to avoid flash
+  const [trelloBannerDismissed, setTrelloBannerDismissed] = useState(true)
 
   const today = new Date().toISOString().split("T")[0]
 
   useEffect(() => {
     setSlackBannerDismissed(localStorage.getItem("slack-banner-dismissed") === "true")
+    setTrelloBannerDismissed(localStorage.getItem("trello-banner-dismissed") === "true")
   }, [])
 
   useEffect(() => {
@@ -248,6 +250,35 @@ function WorklogApp() {
           </div>
         )}
 
+        {!serviceStatus.trello && !trelloBannerDismissed && (
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border bg-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-trello text-white">
+                <span className="text-xs font-semibold">T</span>
+              </div>
+              <div>
+                <p className="font-medium">Connect Trello</p>
+                <p className="text-sm text-muted-foreground">See your Trello card activity alongside your worklog.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button asChild>
+                <a href="/api/auth/trello">Connect</a>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  localStorage.setItem("trello-banner-dismissed", "true")
+                  setTrelloBannerDismissed(true)
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
@@ -297,6 +328,32 @@ function WorklogApp() {
                 ) : (
                   <Button variant="ghost" size="sm" asChild>
                     <a href="/api/auth/slack">
+                      <Link2 className="h-3 w-3 mr-1" />
+                      Connect
+                    </a>
+                  </Button>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant={serviceStatus.trello ? "default" : "secondary"}>
+                  Trello
+                </Badge>
+                {serviceStatus.trello ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      fetch("/api/auth/trello/disconnect", { method: "POST" }).then(() => {
+                        setServiceStatus((s) => ({ ...s, trello: false }))
+                      })
+                    }}
+                  >
+                    <LogOut className="h-3 w-3 mr-1" />
+                    Disconnect
+                  </Button>
+                ) : (
+                  <Button variant="ghost" size="sm" asChild>
+                    <a href="/api/auth/trello">
                       <Link2 className="h-3 w-3 mr-1" />
                       Connect
                     </a>

@@ -6,6 +6,25 @@
   --color-gmail: #EA4335;
   --color-calendar: #4285F4;
   --color-docs: #34A853;
+  --color-trello: #026AA7;
+}
+
+@layer utilities {
+  .bg-slack {
+    background-color: var(--color-slack);
+  }
+  .bg-gmail {
+    background-color: var(--color-gmail);
+  }
+  .bg-calendar {
+    background-color: var(--color-calendar);
+  }
+  .bg-docs {
+    background-color: var(--color-docs);
+  }
+  .bg-trello {
+    background-color: var(--color-trello);
+  }
 }
 
 @layer base {

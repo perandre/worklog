@@ -1,5 +1,5 @@
 type Activity = {
-  source: "calendar" | "gmail" | "slack" | "docs"
+  source: "calendar" | "gmail" | "slack" | "docs" | "trello"
   type: string
   timestamp: Date
   endTime?: Date
@@ -88,6 +88,7 @@ function mergeHourActivities(hourActivities: Activity[]): HourData {
   const slack = hourActivities.filter((a) => a.source === "slack")
   const gmail = hourActivities.filter((a) => a.source === "gmail")
   const docs = hourActivities.filter((a) => a.source === "docs")
+  const trello = hourActivities.filter((a) => a.source === "trello")
 
   const primaries = calendar
 
@@ -95,7 +96,7 @@ function mergeHourActivities(hourActivities: Activity[]): HourData {
     gmail.filter((email) => !isCalendarEmail(email))
   )
 
-  const communications = [...slack, ...filteredEmails, ...docs].sort(
+  const communications = [...slack, ...filteredEmails, ...docs, ...trello].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   )
 
@@ -118,12 +119,14 @@ export function getDaySummary(hourlyData: Record<number, HourData>) {
   let totalSlackMessages = 0
   let totalEmails = 0
   let totalDocEdits = 0
+  let totalTrelloActivities = 0
 
   for (const hourData of Object.values(hourlyData)) {
     totalMeetings += (hourData.primaries || []).filter((p: any) => !p.isSpanning).length
     totalSlackMessages += hourData.communications.filter((c) => c.source === "slack").length
     totalEmails += hourData.communications.filter((c) => c.source === "gmail").length
     totalDocEdits += hourData.communications.filter((c) => c.source === "docs").length
+    totalTrelloActivities += hourData.communications.filter((c) => c.source === "trello").length
   }
 
   return {
@@ -131,5 +134,6 @@ export function getDaySummary(hourlyData: Record<number, HourData>) {
     totalSlackMessages,
     totalEmails,
     totalDocEdits,
+    totalTrelloActivities,
   }
 }

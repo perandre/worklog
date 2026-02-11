@@ -112,6 +112,8 @@ export async function getMessages(date: string, token?: string) {
       const key = `${channel}-${hour}`
 
       if (!groupedByChannelHour.has(key)) {
+        const permalink: string | undefined = (match as any).permalink
+
         groupedByChannelHour.set(key, {
           source: "slack" as const,
           type: "message" as const,
@@ -120,6 +122,7 @@ export async function getMessages(date: string, token?: string) {
           isDm,
           text: match.text || "",
           timestamp,
+          url: permalink,
         })
       }
     }
