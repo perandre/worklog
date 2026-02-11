@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
-import { AlertCircle, ChevronLeft, ChevronRight, Calendar, LogOut, Link2, MessageSquare, X } from "lucide-react"
+import { AlertCircle, ChevronLeft, ChevronRight, Calendar, Link2, MessageSquare, X } from "lucide-react"
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + "T12:00:00")
@@ -296,70 +296,48 @@ function WorklogApp() {
       <footer className="border-t mt-auto">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Badge variant={serviceStatus.google ? "default" : "secondary"}>
-                  Google
-                </Badge>
-                {serviceStatus.google && (
-                  <Button variant="ghost" size="sm" onClick={() => signOut()}>
-                    <LogOut className="h-3 w-3 mr-1" />
-                    Disconnect
-                  </Button>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant={serviceStatus.slack ? "default" : "secondary"}>
+            <div className="flex items-center gap-2">
+              <Badge
+                variant={serviceStatus.google ? "default" : "outline"}
+                className="cursor-pointer"
+                onClick={() => serviceStatus.google ? signOut() : signIn("google")}
+              >
+                Google
+              </Badge>
+              {serviceStatus.slack ? (
+                <Badge
+                  variant="default"
+                  className="cursor-pointer"
+                  onClick={() => {
+                    fetch("/api/auth/slack/disconnect", { method: "POST" }).then(() => {
+                      setServiceStatus((s) => ({ ...s, slack: false }))
+                    })
+                  }}
+                >
                   Slack
                 </Badge>
-                {serviceStatus.slack ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      fetch("/api/auth/slack/disconnect", { method: "POST" }).then(() => {
-                        setServiceStatus((s) => ({ ...s, slack: false }))
-                      })
-                    }}
-                  >
-                    <LogOut className="h-3 w-3 mr-1" />
-                    Disconnect
-                  </Button>
-                ) : (
-                  <Button variant="ghost" size="sm" asChild>
-                    <a href="/api/auth/slack">
-                      <Link2 className="h-3 w-3 mr-1" />
-                      Connect
-                    </a>
-                  </Button>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant={serviceStatus.trello ? "default" : "secondary"}>
+              ) : (
+                <a href="/api/auth/slack">
+                  <Badge variant="outline" className="cursor-pointer">Slack</Badge>
+                </a>
+              )}
+              {serviceStatus.trello ? (
+                <Badge
+                  variant="default"
+                  className="cursor-pointer"
+                  onClick={() => {
+                    fetch("/api/auth/trello/disconnect", { method: "POST" }).then(() => {
+                      setServiceStatus((s) => ({ ...s, trello: false }))
+                    })
+                  }}
+                >
                   Trello
                 </Badge>
-                {serviceStatus.trello ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      fetch("/api/auth/trello/disconnect", { method: "POST" }).then(() => {
-                        setServiceStatus((s) => ({ ...s, trello: false }))
-                      })
-                    }}
-                  >
-                    <LogOut className="h-3 w-3 mr-1" />
-                    Disconnect
-                  </Button>
-                ) : (
-                  <Button variant="ghost" size="sm" asChild>
-                    <a href="/api/auth/trello">
-                      <Link2 className="h-3 w-3 mr-1" />
-                      Connect
-                    </a>
-                  </Button>
-                )}
-              </div>
+              ) : (
+                <a href="/api/auth/trello">
+                  <Badge variant="outline" className="cursor-pointer">Trello</Badge>
+                </a>
+              )}
             </div>
             <p className="text-xs text-muted-foreground">
               Hours 6:00 - 23:00
