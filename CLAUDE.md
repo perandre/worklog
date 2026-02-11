@@ -8,7 +8,7 @@ A summary of your day - shows hour-by-hour activity from Google (Calendar, Gmail
 - **Auth**: NextAuth.js v5 (JWT mode, no database)
 - **UI**: shadcn/ui + Tailwind CSS v4
 - **Icons**: Lucide React
-- **APIs**: Google (gmail, calendar, driveactivity v2), Slack (search, users, conversations)
+- **APIs**: Google (gmail, calendar, driveactivity v2, drive v3), Slack (search, users, conversations)
 - **Hosting**: Vercel
 
 ## Project Structure
@@ -28,7 +28,7 @@ app/
 │   └── Activity.tsx                # Activity item with source icons
 ├── lib/
 │   ├── auth.ts                     # NextAuth config + Google OAuth
-│   ├── google.ts                   # Calendar, Gmail, Drive Activity APIs
+│   ├── google.ts                   # Calendar, Gmail, Drive + Drive Activity APIs
 │   ├── slack.ts                    # Slack search API + user resolution
 │   └── aggregator.ts               # Hour bucketing logic
 ├── globals.css                     # Tailwind + shadcn CSS variables
@@ -78,7 +78,7 @@ Brand colors (both themes):
 ## Auth
 
 ### Google (via NextAuth)
-- Scopes: `gmail.readonly`, `calendar.readonly`, `drive.activity.readonly`
+- Scopes: `gmail.readonly`, `calendar.readonly`, `drive.activity.readonly`, `drive.metadata.readonly`
 - Tokens stored in encrypted JWT cookie
 - Auto-refresh on expiry
 
@@ -94,6 +94,14 @@ Brand colors (both themes):
 3. Calls Google/Slack APIs in parallel
 4. `aggregator.ts` buckets activities by hour (7-18)
 5. Returns `{ hours, summary, sources }`
+
+## Drive Activity Notes
+
+- Drive Activity v2 is queried with a time filter plus `detail.action_detail_case` (edit/create/comment).
+- Actor matching happens at the action level; activities can contain multiple actions/actors.
+- Shared drives are included by querying each shared drive `ancestorName` in addition to `items/root`.
+- If shared drive listing is blocked, update the hardcoded shared drive IDs in `app/lib/google.ts`.
+- Debug: set `DEBUG_DRIVE_ACTIVITY=1` to log a small sample of raw activity payloads.
 
 ## Display Rules
 
@@ -123,3 +131,12 @@ GOOGLE_CLIENT_SECRET=...
 SLACK_CLIENT_ID=...
 SLACK_CLIENT_SECRET=...
 ```
+
+## Launch Checklist (Company-Wide)
+
+- Restrict Google sign-in to the company domain in NextAuth callbacks.
+- Disable debug logging in production; never log raw Drive Activity payloads.
+- Move shared drive IDs out of code (config/DB/env) and lock access.
+- Review OAuth scopes and remove any that are not required.
+- Add a privacy note (no server-side storage; data fetched on demand).
+- Provide a token revocation/disconnect flow for Google (in addition to Slack).
