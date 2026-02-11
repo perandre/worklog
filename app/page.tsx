@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
-import { AlertCircle, ChevronLeft, ChevronRight, Calendar, Link2, MessageSquare, X } from "lucide-react"
+import { AlertCircle, ChevronLeft, ChevronRight, Calendar, Link2, LogOut, MessageSquare, X } from "lucide-react"
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + "T12:00:00")
@@ -297,45 +297,33 @@ function WorklogApp() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-2">
-              <Badge
-                variant={serviceStatus.google ? "default" : "outline"}
-                className="cursor-pointer"
-                onClick={() => serviceStatus.google ? signOut() : signIn("google")}
-              >
-                Google
+              <Badge variant="default" className="cursor-pointer gap-1" onClick={() => signOut()}>
+                Google <LogOut className="h-3 w-3" />
               </Badge>
               {serviceStatus.slack ? (
-                <Badge
-                  variant="default"
-                  className="cursor-pointer"
-                  onClick={() => {
-                    fetch("/api/auth/slack/disconnect", { method: "POST" }).then(() => {
-                      setServiceStatus((s) => ({ ...s, slack: false }))
-                    })
-                  }}
-                >
-                  Slack
+                <Badge variant="default" className="cursor-pointer gap-1" onClick={() => {
+                  fetch("/api/auth/slack/disconnect", { method: "POST" }).then(() => {
+                    setServiceStatus((s) => ({ ...s, slack: false }))
+                  })
+                }}>
+                  Slack <LogOut className="h-3 w-3" />
                 </Badge>
               ) : (
                 <a href="/api/auth/slack">
-                  <Badge variant="outline" className="cursor-pointer">Slack</Badge>
+                  <Badge variant="outline" className="gap-1"><Link2 className="h-3 w-3" /> Slack</Badge>
                 </a>
               )}
               {serviceStatus.trello ? (
-                <Badge
-                  variant="default"
-                  className="cursor-pointer"
-                  onClick={() => {
-                    fetch("/api/auth/trello/disconnect", { method: "POST" }).then(() => {
-                      setServiceStatus((s) => ({ ...s, trello: false }))
-                    })
-                  }}
-                >
-                  Trello
+                <Badge variant="default" className="cursor-pointer gap-1" onClick={() => {
+                  fetch("/api/auth/trello/disconnect", { method: "POST" }).then(() => {
+                    setServiceStatus((s) => ({ ...s, trello: false }))
+                  })
+                }}>
+                  Trello <LogOut className="h-3 w-3" />
                 </Badge>
               ) : (
                 <a href="/api/auth/trello">
-                  <Badge variant="outline" className="cursor-pointer">Trello</Badge>
+                  <Badge variant="outline" className="gap-1"><Link2 className="h-3 w-3" /> Trello</Badge>
                 </a>
               )}
             </div>
