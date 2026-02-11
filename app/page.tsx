@@ -349,24 +349,25 @@ function DayView({ data }: { data: any }) {
 
 function WeekView({ weekData, today }: { weekData: any[]; today: string }) {
   return (
-    <div className="flex gap-4 overflow-x-auto pb-4">
+    <div className="overflow-x-auto pb-4">
+    <div className="grid grid-cols-5 gap-3 min-w-[1200px]">
       {weekData.map(({ date, data }) => (
-        <div key={date} className="flex-1 min-w-[260px]">
-          <div className="flex items-center gap-2 mb-4">
-            <h3 className="font-medium">{formatDate(date)}</h3>
+        <div key={date} className="min-w-0">
+          <div className="flex items-center gap-2 mb-3">
+            <h3 className="font-medium text-sm">{formatDate(date)}</h3>
             {date === today && <Badge variant="secondary">Today</Badge>}
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {Array.from({ length: 17 }, (_, i) => i + 6).map((hour) => {
               const hourData = data.hours?.[hour] || { primaries: [], communications: [] }
               const isEmpty = (!hourData.primaries?.length) && !hourData.communications?.length
               if (isEmpty) return null
               return (
-                <div key={hour} className="flex gap-2">
+                <div key={hour} className="flex gap-1.5">
                   <div className="w-10 shrink-0 text-right text-xs text-muted-foreground pt-2">
                     {hour.toString().padStart(2, "0")}:00
                   </div>
-                  <Card className="flex-1">
+                  <Card className="flex-1 min-w-0 overflow-hidden">
                     <CardContent className="p-2">
                       <div className="space-y-1">
                         {(hourData.primaries || []).map((event: any, i: number) => (
@@ -384,6 +385,7 @@ function WeekView({ weekData, today }: { weekData: any[]; today: string }) {
           </div>
         </div>
       ))}
+    </div>
     </div>
   )
 }

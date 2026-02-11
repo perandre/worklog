@@ -84,11 +84,11 @@ export default function Activity({ activity, compact = false }: ActivityProps) {
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2 text-xs">
+      <div className="flex items-center gap-2 text-xs min-w-0">
         <SourceIcon source={activity.source} compact />
-        <span className="truncate font-medium">{title}</span>
+        <span className="truncate font-medium min-w-0">{title}</span>
         {duration && (
-          <Badge variant="outline" className="ml-auto text-[10px] px-1 py-0">
+          <Badge variant="outline" className="shrink-0 ml-auto text-[10px] px-1 py-0">
             {duration}
           </Badge>
         )}
