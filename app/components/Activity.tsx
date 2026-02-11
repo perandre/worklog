@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Mail, MessageSquare, FileText, Copy, Check } from "lucide-react"
+import { Calendar, Mail, MessageSquare, FileText, Copy, Check, Trello } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function truncateText(text: string, maxLen = 40) {
@@ -27,6 +27,7 @@ const sourceConfig = {
   gmail: { icon: Mail, color: "bg-gmail text-white" },
   slack: { icon: MessageSquare, color: "bg-slack text-white" },
   docs: { icon: FileText, color: "bg-docs text-white" },
+  trello: { icon: Trello, color: "bg-trello text-white" },
 } as const
 
 type Source = keyof typeof sourceConfig
@@ -72,6 +73,21 @@ export default function Activity({ activity, compact = false }: ActivityProps) {
            activity.type === "delete" ? "Deleted" :
            activity.type === "rename" ? "Renamed" :
            activity.type === "move" ? "Moved" : "Created"
+  } else if (activity.source === "trello") {
+    const board = activity.boardName ? ` · ${activity.boardName}` : ""
+    const list = activity.listName ? ` · ${activity.listName}` : ""
+    title = truncateText(activity.cardName || "Trello card", compact ? 25 : 40)
+    if (activity.type === "card_created") {
+      meta = `Created${board}${list}`
+    } else if (activity.type === "card_commented") {
+      meta = truncateText(activity.commentText ? `Commented: ${activity.commentText}` : `Commented${board}${list}`, compact ? 30 : 60)
+    } else if (activity.type === "card_moved") {
+      meta = `Moved${board}${list}`
+    } else if (activity.type === "card_archived") {
+      meta = `Archived${board}${list}`
+    } else {
+      meta = `Trello · ${activity.type}${board}${list}`
+    }
   }
 
   const copyDuration = () => {
@@ -82,11 +98,24 @@ export default function Activity({ activity, compact = false }: ActivityProps) {
     }
   }
 
+  const titleContent = activity.url ? (
+    <a
+      href={activity.url}
+      target="_blank"
+      rel="noreferrer"
+      className="hover:text-primary transition-colors"
+    >
+      {title}
+    </a>
+  ) : (
+    title
+  )
+
   if (compact) {
     return (
       <div className="flex items-center gap-2 text-xs">
         <SourceIcon source={activity.source} compact />
-        <span className="truncate font-medium">{title}</span>
+        <span className="truncate font-medium">{titleContent}</span>
         {duration && (
           <Badge variant="outline" className="ml-auto text-[10px] px-1 py-0">
             {duration}
@@ -101,7 +130,7 @@ export default function Activity({ activity, compact = false }: ActivityProps) {
       <SourceIcon source={activity.source} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium truncate">{title}</span>
+          <span className="font-medium truncate">{titleContent}</span>
           {duration && (
             <button
               onClick={copyDuration}

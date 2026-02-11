@@ -200,6 +200,9 @@ export async function getEmails(accessToken: string, date: string) {
         const getHeader = (name: string) =>
           headers.find((h) => h.name?.toLowerCase() === name.toLowerCase())?.value || ""
 
+        const messageId = msg.id!
+        const gmailUrl = `https://mail.google.com/mail/u/0/#all/${messageId}`
+
         return {
           source: "gmail" as const,
           type: "email" as const,
@@ -208,6 +211,7 @@ export async function getEmails(accessToken: string, date: string) {
           to: getHeader("To"),
           timestamp: new Date(getHeader("Date")),
           snippet: detail.data.snippet || "",
+          url: gmailUrl,
         }
       } catch (error) {
         console.error(`Error fetching email ${msg.id}:`, error)
@@ -350,12 +354,16 @@ export async function getDocActivity(accessToken: string, date: string, timezone
           if (!driveItem) continue
           if (driveItem.mimeType?.includes("folder")) continue
 
+          const docId = driveItem.name?.replace("items/", "") || ""
+          const docUrl = `https://drive.google.com/file/d/${docId}/view`
+
           const entry = {
             source: "docs" as const,
             type: actionType,
             title: driveItem.title || "Untitled",
-            docId: driveItem.name?.replace("items/", "") || "",
+            docId,
             timestamp,
+            url: docUrl,
           }
           results.push(entry)
         }
