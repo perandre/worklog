@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
     ])
 
     const allActivities = [...calendarEvents, ...emails, ...docActivity, ...slackMessages]
-    const hours = processActivities(allActivities, 7, 18, timezone)
+    const hours = processActivities(allActivities, 6, 23, timezone)
     const summary = getDaySummary(hours)
 
     return NextResponse.json({

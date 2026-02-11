@@ -305,7 +305,7 @@ function WorklogApp() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground">
-              Hours 7:00 - 18:00
+              Hours 6:00 - 23:00
             </p>
           </div>
         </div>
@@ -318,28 +318,25 @@ function DayView({ data }: { data: any }) {
   return (
     <div className="max-w-2xl mx-auto">
       <div className="space-y-2">
-        {Array.from({ length: 11 }, (_, i) => i + 7).map((hour) => {
+        {Array.from({ length: 17 }, (_, i) => i + 6).map((hour) => {
           const hourData = data.hours[hour] || { primaries: [], communications: [] }
           const isEmpty = (!hourData.primaries?.length) && !hourData.communications?.length
+          if (isEmpty) return null
           return (
             <div key={hour} className="flex gap-4">
               <div className="w-14 shrink-0 text-right text-sm text-muted-foreground pt-3">
                 {hour.toString().padStart(2, "0")}:00
               </div>
-              <Card className={`flex-1 ${isEmpty ? "bg-muted/30" : ""}`}>
+              <Card className="flex-1">
                 <CardContent className="p-3">
-                  {isEmpty ? (
-                    <p className="text-sm text-muted-foreground">No activity</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {(hourData.primaries || []).map((event: any, i: number) => (
-                        <Activity key={`cal-${i}`} activity={event} />
-                      ))}
-                      {hourData.communications.slice(0, 6).map((comm: any, i: number) => (
-                        <Activity key={`comm-${i}`} activity={comm} />
-                      ))}
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    {(hourData.primaries || []).map((event: any, i: number) => (
+                      <Activity key={`cal-${i}`} activity={event} />
+                    ))}
+                    {hourData.communications.slice(0, 6).map((comm: any, i: number) => (
+                      <Activity key={`comm-${i}`} activity={comm} />
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -360,28 +357,25 @@ function WeekView({ weekData, today }: { weekData: any[]; today: string }) {
             {date === today && <Badge variant="secondary">Today</Badge>}
           </div>
           <div className="space-y-2">
-            {Array.from({ length: 11 }, (_, i) => i + 7).map((hour) => {
+            {Array.from({ length: 17 }, (_, i) => i + 6).map((hour) => {
               const hourData = data.hours?.[hour] || { primaries: [], communications: [] }
               const isEmpty = (!hourData.primaries?.length) && !hourData.communications?.length
+              if (isEmpty) return null
               return (
                 <div key={hour} className="flex gap-2">
                   <div className="w-10 shrink-0 text-right text-xs text-muted-foreground pt-2">
                     {hour.toString().padStart(2, "0")}:00
                   </div>
-                  <Card className={`flex-1 ${isEmpty ? "bg-muted/30" : ""}`}>
+                  <Card className="flex-1">
                     <CardContent className="p-2">
-                      {isEmpty ? (
-                        <p className="text-xs text-muted-foreground">-</p>
-                      ) : (
-                        <div className="space-y-1">
-                          {(hourData.primaries || []).map((event: any, i: number) => (
-                            <Activity key={`cal-${i}`} activity={event} compact />
-                          ))}
-                          {hourData.communications.slice(0, 3).map((comm: any, i: number) => (
-                            <Activity key={`comm-${i}`} activity={comm} compact />
-                          ))}
-                        </div>
-                      )}
+                      <div className="space-y-1">
+                        {(hourData.primaries || []).map((event: any, i: number) => (
+                          <Activity key={`cal-${i}`} activity={event} compact />
+                        ))}
+                        {hourData.communications.slice(0, 3).map((comm: any, i: number) => (
+                          <Activity key={`comm-${i}`} activity={comm} compact />
+                        ))}
+                      </div>
                     </CardContent>
                   </Card>
                 </div>

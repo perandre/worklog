@@ -1,3 +1,9 @@
+## Workflow
+
+After each code change:
+1. Commit with a short descriptive message.
+2. Restart the Next.js dev server: `npm run dev`
+
 # Worklog
 
 A summary of your day - shows hour-by-hour activity from Google (Calendar, Gmail, Docs) and Slack.
@@ -92,7 +98,7 @@ Brand colors (both themes):
 1. `page.tsx` fetches `/api/activities?date=YYYY-MM-DD`
 2. API route gets Google token from session, Slack token from cookie
 3. Calls Google/Slack APIs in parallel
-4. `aggregator.ts` buckets activities by hour (7-18)
+4. `aggregator.ts` buckets activities by hour (6-23)
 5. Returns `{ hours, summary, sources }`
 
 ## Drive Activity Notes
@@ -105,7 +111,7 @@ Brand colors (both themes):
 
 ## Display Rules
 
-- Work hours: 7 AM - 6 PM
+- Work hours: 6 AM - 11 PM (empty hours hidden)
 - Calendar events: All shown per hour (`primaries` array)
 - Communications: Max 6/hour (day view), 3/hour (week view)
 - Slack DMs: No `#` prefix, channels get `#` prefix

@@ -15,7 +15,7 @@ function getHourInTimezone(date: Date, timezone: string): number {
   return parseInt(date.toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: timezone }))
 }
 
-function bucketByHour(activities: Activity[], startHour = 7, endHour = 18, timezone = "UTC") {
+function bucketByHour(activities: Activity[], startHour = 6, endHour = 23, timezone = "UTC") {
   const buckets: Record<number, Activity[]> = {}
 
   for (let hour = startHour; hour < endHour; hour++) {
@@ -102,7 +102,7 @@ function mergeHourActivities(hourActivities: Activity[]): HourData {
   return { primaries, communications }
 }
 
-export function processActivities(activities: Activity[], startHour = 7, endHour = 18, timezone = "UTC") {
+export function processActivities(activities: Activity[], startHour = 6, endHour = 23, timezone = "UTC") {
   const buckets = bucketByHour(activities, startHour, endHour, timezone)
   const processed: Record<number, HourData> = {}
 
