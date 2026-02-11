@@ -98,11 +98,24 @@ export default function Activity({ activity, compact = false }: ActivityProps) {
     }
   }
 
+  const titleContent = activity.url ? (
+    <a
+      href={activity.url}
+      target="_blank"
+      rel="noreferrer"
+      className="hover:text-primary transition-colors"
+    >
+      {title}
+    </a>
+  ) : (
+    title
+  )
+
   if (compact) {
     return (
       <div className="flex items-center gap-2 text-xs">
         <SourceIcon source={activity.source} compact />
-        <span className="truncate font-medium">{title}</span>
+        <span className="truncate font-medium">{titleContent}</span>
         {duration && (
           <Badge variant="outline" className="ml-auto text-[10px] px-1 py-0">
             {duration}
@@ -117,7 +130,7 @@ export default function Activity({ activity, compact = false }: ActivityProps) {
       <SourceIcon source={activity.source} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium truncate">{title}</span>
+          <span className="font-medium truncate">{titleContent}</span>
           {duration && (
             <button
               onClick={copyDuration}
