@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
-import { AlertCircle, ChevronLeft, ChevronRight, Calendar, Link2, LogOut, MessageSquare, X } from "lucide-react"
+import { AlertCircle, ChevronLeft, ChevronRight, Calendar, Link2, LogOut, MessageSquare, Github, X } from "lucide-react"
 
 function formatDate(dateStr: string) {
   const d = new Date(dateStr + "T12:00:00")
@@ -53,15 +53,17 @@ function WorklogApp() {
   const [weekData, setWeekData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [serviceStatus, setServiceStatus] = useState({ google: false, slack: false, trello: false })
+  const [serviceStatus, setServiceStatus] = useState({ google: false, slack: false, trello: false, github: false })
   const [slackBannerDismissed, setSlackBannerDismissed] = useState(true) // Start true to avoid flash
   const [trelloBannerDismissed, setTrelloBannerDismissed] = useState(true)
+  const [githubBannerDismissed, setGithubBannerDismissed] = useState(true)
 
   const today = new Date().toISOString().split("T")[0]
 
   useEffect(() => {
     setSlackBannerDismissed(localStorage.getItem("slack-banner-dismissed") === "true")
     setTrelloBannerDismissed(localStorage.getItem("trello-banner-dismissed") === "true")
+    setGithubBannerDismissed(localStorage.getItem("github-banner-dismissed") === "true")
   }, [])
 
   useEffect(() => {
@@ -279,6 +281,35 @@ function WorklogApp() {
           </div>
         )}
 
+        {!serviceStatus.github && !githubBannerDismissed && (
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border bg-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-github text-white">
+                <Github className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-medium">Connect GitHub</p>
+                <p className="text-sm text-muted-foreground">See your commits, PRs, and issues</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button asChild>
+                <a href="/api/auth/github">Connect</a>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  localStorage.setItem("github-banner-dismissed", "true")
+                  setGithubBannerDismissed(true)
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
@@ -324,6 +355,19 @@ function WorklogApp() {
               ) : (
                 <a href="/api/auth/trello">
                   <Badge variant="outline" className="gap-1"><Link2 className="h-3 w-3" /> Trello</Badge>
+                </a>
+              )}
+              {serviceStatus.github ? (
+                <Badge variant="default" className="cursor-pointer gap-1" onClick={() => {
+                  fetch("/api/auth/github/disconnect", { method: "POST" }).then(() => {
+                    setServiceStatus((s) => ({ ...s, github: false }))
+                  })
+                }}>
+                  GitHub <LogOut className="h-3 w-3" />
+                </Badge>
+              ) : (
+                <a href="/api/auth/github">
+                  <Badge variant="outline" className="gap-1"><Link2 className="h-3 w-3" /> GitHub</Badge>
                 </a>
               )}
             </div>
