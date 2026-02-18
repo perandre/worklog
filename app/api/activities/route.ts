@@ -4,6 +4,7 @@ import { auth } from "@/app/lib/auth"
 import { getCalendarEvents, getEmails, getDocActivity } from "@/app/lib/google"
 import { getMessages } from "@/app/lib/slack"
 import { getTrelloActivitiesForDate } from "@/app/lib/trello"
+import { getGitHubActivitiesForDate } from "@/app/lib/github"
 import { processActivities, getDaySummary } from "@/app/lib/aggregator"
 
 export async function GET(request: NextRequest) {
@@ -11,6 +12,7 @@ export async function GET(request: NextRequest) {
   const cookieStore = await cookies()
   const slackToken = cookieStore.get("slack_token")?.value
   const trelloToken = cookieStore.get("trello_token")?.value
+  const githubToken = cookieStore.get("github_token")?.value
 
   if (!session?.accessToken) {
     return NextResponse.json(
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [calendarEvents, emails, docActivity, slackMessages, trelloActivities] = await Promise.all([
+    const [calendarEvents, emails, docActivity, slackMessages, trelloActivities, githubActivities] = await Promise.all([
       getCalendarEvents(session.accessToken, date).catch((err) => {
         console.error("Calendar fetch error:", err.message)
         return []
@@ -67,9 +69,13 @@ export async function GET(request: NextRequest) {
         console.error("Trello fetch error:", err?.message || err)
         return []
       }),
+      getGitHubActivitiesForDate(date, githubToken).catch((err) => {
+        console.error("GitHub fetch error:", err?.message || err)
+        return []
+      }),
     ])
 
-    const allActivities = [...calendarEvents, ...emails, ...docActivity, ...slackMessages, ...trelloActivities]
+    const allActivities = [...calendarEvents, ...emails, ...docActivity, ...slackMessages, ...trelloActivities, ...githubActivities]
     const hours = processActivities(allActivities, 6, 23, timezone)
     const summary = getDaySummary(hours)
 
@@ -83,6 +89,7 @@ export async function GET(request: NextRequest) {
         docs: docActivity.length,
         slack: slackMessages.length,
         trello: trelloActivities.length,
+        github: githubActivities.length,
       },
     })
   } catch (error: any) {
