@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Mail, MessageSquare, FileText, Copy, Check, Trello } from "lucide-react"
+import { Calendar, Mail, MessageSquare, FileText, Copy, Check, Trello, Github } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 function truncateText(text: string, maxLen = 40) {
@@ -28,6 +28,7 @@ const sourceConfig = {
   slack: { icon: MessageSquare, color: "bg-slack text-white" },
   docs: { icon: FileText, color: "bg-docs text-white" },
   trello: { icon: Trello, color: "bg-trello text-white" },
+  github: { icon: Github, color: "bg-github text-white" },
 } as const
 
 type Source = keyof typeof sourceConfig
@@ -88,6 +89,17 @@ export default function Activity({ activity, compact = false }: ActivityProps) {
     } else {
       meta = `Trello · ${activity.type}${board}${list}`
     }
+  } else if (activity.source === "github") {
+    title = truncateText(activity.title, compact ? 25 : 40)
+    const actionLabel =
+      activity.type === "commit" ? "Commit" :
+      activity.type === "pr_opened" ? "PR opened" :
+      activity.type === "pr_merged" ? "PR merged" :
+      activity.type === "pr_reviewed" ? "PR reviewed" :
+      activity.type === "review_comment" ? "Review comment" :
+      activity.type === "issue_opened" ? "Issue opened" :
+      activity.type === "issue_commented" ? "Comment" : activity.type
+    meta = `${actionLabel} · ${activity.repoName}`
   }
 
   const copyDuration = () => {
