@@ -60,27 +60,36 @@ function roundToHalf(n: number): number {
   return Math.max(0.5, Math.round(n * 2) / 2)
 }
 
-function generateDescription(activities: FlatActivity[]): string {
-  const parts: string[] = []
+function generateDescription(activities: FlatActivity[]): { no: string; en: string } {
+  const partsNo: string[] = []
+  const partsEn: string[] = []
   const calEvents = activities.filter((a) => a.source === "calendar")
   const docs = activities.filter((a) => a.source === "docs")
   const code = activities.filter((a) => a.source === "github")
   const slack = activities.filter((a) => a.source === "slack")
 
   if (calEvents.length > 0) {
-    parts.push(calEvents.map((e) => e.title).slice(0, 2).join(", "))
+    const titles = calEvents.map((e) => e.title).slice(0, 2).join(", ")
+    partsNo.push(titles)
+    partsEn.push(titles)
   }
   if (code.length > 0) {
-    parts.push("utvikling")
+    partsNo.push("utvikling")
+    partsEn.push("development")
   }
   if (docs.length > 0) {
-    parts.push("dokumentarbeid")
+    partsNo.push("dokumentarbeid")
+    partsEn.push("documentation work")
   }
-  if (slack.length > 0 && parts.length === 0) {
-    parts.push("kommunikasjon og oppfølging")
+  if (slack.length > 0 && partsNo.length === 0) {
+    partsNo.push("kommunikasjon og oppfølging")
+    partsEn.push("communication and follow-up")
   }
 
-  return parts.join(", ").replace(/^./, (s) => s.toUpperCase()) || "Diverse arbeid"
+  return {
+    no: partsNo.join(", ").replace(/^./, (s) => s.toUpperCase()) || "Diverse arbeid",
+    en: partsEn.join(", ").replace(/^./, (s) => s.toUpperCase()) || "Miscellaneous work",
+  }
 }
 
 function generateInternalNote(activities: FlatActivity[]): string {
@@ -154,13 +163,15 @@ export class MockAiAdapter implements AiAdapter {
       const actType = guessActivityType(projectActivities, activityTypes)
       const confidence = projectActivities.some((a) => a.source === "calendar") ? "high" : "medium"
 
+      const desc = generateDescription(projectActivities)
       suggestions.push({
         projectId: project.id,
         projectName: project.name,
         activityTypeId: actType.id,
         activityTypeName: actType.name,
         hours,
-        description: generateDescription(projectActivities),
+        description: desc.no,
+        descriptionEn: desc.en,
         internalNote: generateInternalNote(projectActivities),
         reasoning: `${projectActivities.length} aktiviteter matchet til dette prosjektet basert på nøkkelord og tidsbruk.`,
         confidence,

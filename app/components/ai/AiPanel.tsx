@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { X, Sparkles, Loader2, Send, RefreshCw, Undo2 } from "lucide-react"
+import { X, Sparkles, Loader2, Send, RefreshCw, Undo2, CheckCheck } from "lucide-react"
 import { TimeLogSuggestion, AiSuggestionResponse } from "@/app/lib/types/timelog"
 import { PmContext, PmProject, PmActivityType } from "@/app/lib/types/pm"
 import SuggestionCard from "./SuggestionCard"
@@ -148,6 +148,14 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
     setRecentlyRejected(null)
   }, [recentlyRejected, highlightSources])
 
+  const handleApproveAll = useCallback(() => {
+    setSuggestions((prev) => prev.map((s) =>
+      s.status === "pending" ? { ...s, status: "approved" as const } : s
+    ))
+    setExpandedId(null)
+    onHighlight(new Set())
+  }, [onHighlight])
+
   const handleUpdate = useCallback((id: string, updates: Partial<TimeLogSuggestion>) => {
     setSuggestions((prev) => prev.map((s) =>
       s.id === id ? { ...s, ...updates, status: s.status === "approved" ? "edited" as const : s.status } : s
@@ -213,7 +221,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
 
   return (
     <div
-      className="flex flex-col h-full border-l bg-background"
+      className="flex flex-col h-full border-l border-t bg-background rounded-tl-lg"
       onKeyDown={handleKeyDown}
       tabIndex={-1}
     >
@@ -318,6 +326,16 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
 
             {/* Action buttons */}
             <div className="space-y-2 pt-2">
+              {pendingSuggestions.length > 0 && state !== "submitted" && (
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={handleApproveAll}
+                >
+                  <CheckCheck className="h-4 w-4" />
+                  Godkjenn alle
+                </Button>
+              )}
               {approvedSuggestions.length > 0 && state !== "submitted" && (
                 <Button
                   className="w-full gap-2"
