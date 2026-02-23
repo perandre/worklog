@@ -124,6 +124,41 @@ function normalizeEvent(event: GitHubEvent): GitHubActivity[] {
   return activities
 }
 
+async function getCommitsViaSearch(
+  username: string,
+  date: string,
+  token: string
+): Promise<GitHubActivity[]> {
+  console.log(`[GitHub] Searching commits for ${username} on ${date}`)
+  const res = await fetch(
+    `https://api.github.com/search/commits?q=author:${username}+committer-date:${date}&per_page=100&sort=committer-date`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+      },
+    }
+  )
+
+  if (!res.ok) {
+    const body = await res.text()
+    console.error("[GitHub] Commits search failed", res.status, body)
+    return []
+  }
+
+  const data = await res.json()
+  console.log(`[GitHub] Found ${data.total_count} commits via search`)
+
+  return (data.items || []).map((item: any) => ({
+    source: "github" as const,
+    type: "commit",
+    timestamp: new Date(item.commit.committer.date),
+    title: item.commit.message.split("\n")[0],
+    repoName: shortRepoName(item.repository.full_name),
+    url: item.html_url,
+  }))
+}
+
 export async function getGitHubActivitiesForDate(
   date: string,
   token?: string
@@ -165,64 +200,14 @@ export async function getGitHubActivitiesForDate(
     const username = user.login
     console.log(`[GitHub] Authenticated as ${username}`)
 
-    // Paginate events
-    const allActivities: GitHubActivity[] = []
-    let page = 1
-    const maxPages = 10
+    // Fetch commits via search API (reliable for private repos) and
+    // events API (for PRs, issues, reviews) in parallel
+    const [commits, eventActivities] = await Promise.all([
+      getCommitsViaSearch(username, date, token),
+      getEventsForDate(username, date, token, dayStart, dayEnd),
+    ])
 
-    while (page <= maxPages) {
-      console.log(`[GitHub] Fetching events page ${page} for ${username}`)
-      const eventsRes = await fetch(
-        `https://api.github.com/users/${username}/events?per_page=100&page=${page}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            Accept: "application/vnd.github+json",
-          },
-        }
-      )
-
-      if (!eventsRes.ok) {
-        const body = await eventsRes.text()
-        console.error("[GitHub] Failed to fetch events", eventsRes.status, body)
-        break
-      }
-
-      const events = (await eventsRes.json()) as GitHubEvent[]
-      console.log(`[GitHub] Page ${page}: ${events.length} events`)
-      if (events.length === 0) break
-
-      // Log first and last event timestamps on this page
-      if (events.length > 0) {
-        console.log(`[GitHub] Page ${page} range: ${events[0].created_at} → ${events[events.length - 1].created_at}`)
-      }
-
-      let foundOlder = false
-      for (const event of events) {
-        const eventDate = new Date(event.created_at)
-
-        if (eventDate < dayStart) {
-          console.log(`[GitHub] Hit older event (${event.created_at}), stopping pagination`)
-          foundOlder = true
-          break
-        }
-
-        if (eventDate <= dayEnd) {
-          const normalized = normalizeEvent(event)
-          if (normalized.length > 0) {
-            console.log(`[GitHub] Matched: ${event.type} at ${event.created_at} → ${normalized.length} activities`)
-          } else {
-            console.log(`[GitHub] Skipped: ${event.type} at ${event.created_at} (unhandled type or filtered)`)
-          }
-          allActivities.push(...normalized)
-        } else {
-          console.log(`[GitHub] Skipped: ${event.type} at ${event.created_at} (future of target day)`)
-        }
-      }
-
-      if (foundOlder) break
-      page++
-    }
+    const allActivities = [...commits, ...eventActivities]
 
     // Deduplicate by type-title-hour
     const seen = new Set<string>()
@@ -240,4 +225,69 @@ export async function getGitHubActivitiesForDate(
     console.error("[GitHub] Error fetching activities", error)
     return []
   }
+}
+
+async function getEventsForDate(
+  username: string,
+  date: string,
+  token: string,
+  dayStart: Date,
+  dayEnd: Date
+): Promise<GitHubActivity[]> {
+  const allActivities: GitHubActivity[] = []
+  let page = 1
+  const maxPages = 10
+
+  while (page <= maxPages) {
+    console.log(`[GitHub] Fetching events page ${page} for ${username}`)
+    const eventsRes = await fetch(
+      `https://api.github.com/users/${username}/events?per_page=100&page=${page}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/vnd.github+json",
+        },
+      }
+    )
+
+    if (!eventsRes.ok) {
+      const body = await eventsRes.text()
+      console.error("[GitHub] Failed to fetch events", eventsRes.status, body)
+      break
+    }
+
+    const events = (await eventsRes.json()) as GitHubEvent[]
+    console.log(`[GitHub] Page ${page}: ${events.length} events`)
+    if (events.length === 0) break
+
+    if (events.length > 0) {
+      console.log(`[GitHub] Page ${page} range: ${events[0].created_at} → ${events[events.length - 1].created_at}`)
+    }
+
+    let foundOlder = false
+    for (const event of events) {
+      // Skip PushEvents — commits are fetched via search API
+      if (event.type === "PushEvent") continue
+
+      const eventDate = new Date(event.created_at)
+
+      if (eventDate < dayStart) {
+        foundOlder = true
+        break
+      }
+
+      if (eventDate <= dayEnd) {
+        const normalized = normalizeEvent(event)
+        if (normalized.length > 0) {
+          console.log(`[GitHub] Matched: ${event.type} at ${event.created_at} → ${normalized.length} activities`)
+        }
+        allActivities.push(...normalized)
+      }
+    }
+
+    if (foundOlder) break
+    page++
+  }
+
+  return allActivities
 }
