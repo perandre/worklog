@@ -15,7 +15,7 @@ const sources = [
 
 export default function WelcomePage() {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="welcome-container welcome-grain min-h-screen bg-background flex flex-col">
       <div className="absolute top-4 right-4 z-10">
         <ThemeToggle />
       </div>
@@ -32,7 +32,7 @@ export default function WelcomePage() {
               return (
                 <div
                   key={source.label}
-                  className={`welcome-float welcome-stagger-${i + 1} absolute rounded-full flex items-center justify-center shadow-lg`}
+                  className={`welcome-stagger-${i + 1} absolute rounded-full flex items-center justify-center shadow-lg`}
                   style={{
                     width: source.size,
                     height: source.size,
@@ -55,13 +55,16 @@ export default function WelcomePage() {
           </div>
 
           {/* Tagline */}
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          <h1
+            className="text-3xl tracking-tight text-foreground"
+            style={{ fontFamily: "'DM Serif Display', serif" }}
+          >
             Your day, at a glance
           </h1>
 
           {/* Sign in */}
           <div className="flex flex-col items-center gap-3">
-            <Button onClick={() => signIn("google")} size="lg" className="px-8 text-base">
+            <Button onClick={() => signIn("google")} size="lg" className="welcome-cta px-8 text-base">
               Sign in with Google
             </Button>
             <p className="text-xs text-muted-foreground">
