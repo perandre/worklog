@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { signIn, signOut, useSession } from "next-auth/react"
 import { SessionProvider } from "next-auth/react"
 import Activity from "./components/Activity"
+import WelcomePage from "./components/WelcomePage"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -126,35 +127,7 @@ function WorklogApp() {
   }
 
   if (status === "unauthenticated") {
-    return (
-      <div className="min-h-screen bg-background">
-        <header className="border-b">
-          <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-6 w-6" />
-              <h1 className="text-xl font-semibold">Worklog</h1>
-            </div>
-            <ThemeToggle />
-          </div>
-        </header>
-        <main className="container mx-auto px-4 py-16 flex items-center justify-center">
-          <Card className="w-full max-w-md">
-            <CardHeader className="text-center">
-              <CardTitle>Welcome to Worklog</CardTitle>
-              <CardDescription>
-                Connect your Google account to view your calendar events, emails, and document activity.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex justify-center">
-              <Button onClick={() => signIn("google")} size="lg">
-                <Link2 className="mr-2 h-4 w-4" />
-                Connect Google Account
-              </Button>
-            </CardContent>
-          </Card>
-        </main>
-      </div>
-    )
+    return <WelcomePage />
   }
 
   const dateLabel =
