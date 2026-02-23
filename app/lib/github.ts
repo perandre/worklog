@@ -128,7 +128,10 @@ export async function getGitHubActivitiesForDate(
   date: string,
   token?: string
 ): Promise<GitHubActivity[]> {
-  if (!token) return []
+  if (!token) {
+    console.log("[GitHub] No token, skipping")
+    return []
+  }
 
   const dateObj = new Date(date)
   if (isNaN(dateObj.getTime())) {
@@ -141,6 +144,8 @@ export async function getGitHubActivitiesForDate(
   const dayEnd = new Date(dateObj)
   dayEnd.setHours(23, 59, 59, 999)
 
+  console.log(`[GitHub] Fetching activities for ${date}, dayStart=${dayStart.toISOString()}, dayEnd=${dayEnd.toISOString()}`)
+
   try {
     // Get username
     const userRes = await fetch("https://api.github.com/user", {
@@ -151,12 +156,14 @@ export async function getGitHubActivitiesForDate(
     })
 
     if (!userRes.ok) {
-      console.error("[GitHub] Failed to fetch user", userRes.status)
+      const body = await userRes.text()
+      console.error("[GitHub] Failed to fetch user", userRes.status, body)
       return []
     }
 
     const user = await userRes.json()
     const username = user.login
+    console.log(`[GitHub] Authenticated as ${username}`)
 
     // Paginate events
     const allActivities: GitHubActivity[] = []
@@ -176,24 +183,40 @@ export async function getGitHubActivitiesForDate(
       )
 
       if (!eventsRes.ok) {
-        console.error("[GitHub] Failed to fetch events", eventsRes.status)
+        const body = await eventsRes.text()
+        console.error("[GitHub] Failed to fetch events", eventsRes.status, body)
         break
       }
 
       const events = (await eventsRes.json()) as GitHubEvent[]
+      console.log(`[GitHub] Page ${page}: ${events.length} events`)
       if (events.length === 0) break
+
+      // Log first and last event timestamps on this page
+      if (events.length > 0) {
+        console.log(`[GitHub] Page ${page} range: ${events[0].created_at} → ${events[events.length - 1].created_at}`)
+      }
 
       let foundOlder = false
       for (const event of events) {
         const eventDate = new Date(event.created_at)
 
         if (eventDate < dayStart) {
+          console.log(`[GitHub] Hit older event (${event.created_at}), stopping pagination`)
           foundOlder = true
           break
         }
 
         if (eventDate <= dayEnd) {
-          allActivities.push(...normalizeEvent(event))
+          const normalized = normalizeEvent(event)
+          if (normalized.length > 0) {
+            console.log(`[GitHub] Matched: ${event.type} at ${event.created_at} → ${normalized.length} activities`)
+          } else {
+            console.log(`[GitHub] Skipped: ${event.type} at ${event.created_at} (unhandled type or filtered)`)
+          }
+          allActivities.push(...normalized)
+        } else {
+          console.log(`[GitHub] Skipped: ${event.type} at ${event.created_at} (future of target day)`)
         }
       }
 
@@ -211,7 +234,7 @@ export async function getGitHubActivitiesForDate(
       return true
     })
 
-    console.log(`[GitHub] Found ${deduped.length} activities`)
+    console.log(`[GitHub] Total before dedup: ${allActivities.length}, after dedup: ${deduped.length}`)
     return deduped
   } catch (error) {
     console.error("[GitHub] Error fetching activities", error)
