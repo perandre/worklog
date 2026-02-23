@@ -36,9 +36,10 @@ type Source = keyof typeof sourceConfig
 interface ActivityProps {
   activity: any
   compact?: boolean
+  isHighlighted?: boolean
 }
 
-export default function Activity({ activity, compact = false }: ActivityProps) {
+export default function Activity({ activity, compact = false, isHighlighted = false }: ActivityProps) {
   const [copied, setCopied] = useState(false)
 
   let title = ""
@@ -117,7 +118,7 @@ export default function Activity({ activity, compact = false }: ActivityProps) {
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2 text-xs min-w-0">
+      <div className={cn("flex items-center gap-2 text-xs min-w-0", isHighlighted && "ai-highlight rounded px-1 -mx-1")}>
         <SourceIcon source={activity.source} compact />
         <span className="truncate font-medium min-w-0">{titleContent}</span>
         {duration && (
@@ -130,7 +131,7 @@ export default function Activity({ activity, compact = false }: ActivityProps) {
   }
 
   return (
-    <div className="flex items-start gap-3">
+    <div className={cn("flex items-start gap-3", isHighlighted && "ai-highlight rounded-md p-2 -m-1")}>
       <SourceIcon source={activity.source} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">

@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { signIn, signOut, useSession } from "next-auth/react"
 import { SessionProvider } from "next-auth/react"
 import Activity from "./components/Activity"
+import AiPanel from "./components/ai/AiPanel"
 import WelcomePage from "./components/WelcomePage"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -58,8 +59,58 @@ function WorklogApp() {
   const [slackBannerDismissed, setSlackBannerDismissed] = useState(true) // Start true to avoid flash
   const [trelloBannerDismissed, setTrelloBannerDismissed] = useState(true)
   const [githubBannerDismissed, setGithubBannerDismissed] = useState(true)
+  const [aiPanelEnabled, setAiPanelEnabled] = useState(false)
+  const [highlightedActivities, setHighlightedActivities] = useState<Set<string>>(new Set())
 
   const today = new Date().toISOString().split("T")[0]
+
+  // AI panel: URL param + localStorage detection
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("ai") === "1") {
+      localStorage.setItem("ai-panel-enabled", "true")
+      setAiPanelEnabled(true)
+    } else if (localStorage.getItem("ai-panel-enabled") === "true") {
+      setAiPanelEnabled(true)
+    }
+  }, [])
+
+  // AI panel: Cmd+Shift+L keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey && e.shiftKey && e.key === "L") {
+        e.preventDefault()
+        setAiPanelEnabled((prev) => {
+          const next = !prev
+          if (next) {
+            localStorage.setItem("ai-panel-enabled", "true")
+          } else {
+            localStorage.removeItem("ai-panel-enabled")
+            setHighlightedActivities(new Set())
+          }
+          return next
+        })
+      }
+      // Esc closes panel
+      if (e.key === "Escape" && aiPanelEnabled) {
+        setAiPanelEnabled(false)
+        localStorage.removeItem("ai-panel-enabled")
+        setHighlightedActivities(new Set())
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [aiPanelEnabled])
+
+  const closeAiPanel = useCallback(() => {
+    setAiPanelEnabled(false)
+    localStorage.removeItem("ai-panel-enabled")
+    setHighlightedActivities(new Set())
+  }, [])
+
+  const handleHighlight = useCallback((keys: Set<string>) => {
+    setHighlightedActivities(keys)
+  }, [])
 
   useEffect(() => {
     setSlackBannerDismissed(localStorage.getItem("slack-banner-dismissed") === "true")
@@ -290,7 +341,23 @@ function WorklogApp() {
             ))}
           </div>
         ) : viewMode === "day" && data ? (
-          <DayView data={data} />
+          <div className={aiPanelEnabled ? "flex gap-6" : ""}>
+            <div className={aiPanelEnabled ? "flex-1 min-w-0" : ""}>
+              <DayView data={data} highlightedActivities={highlightedActivities} />
+            </div>
+            {aiPanelEnabled && (
+              <div className="w-[400px] shrink-0 ai-panel-enter">
+                <div className="sticky top-[73px] h-[calc(100vh-73px-80px)]">
+                  <AiPanel
+                    date={currentDate}
+                    hours={data?.hours || null}
+                    onClose={closeAiPanel}
+                    onHighlight={handleHighlight}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         ) : viewMode === "week" && weekData.length > 0 ? (
           <WeekView weekData={weekData} today={today} />
         ) : null}
@@ -354,7 +421,12 @@ function WorklogApp() {
   )
 }
 
-function DayView({ data }: { data: any }) {
+function DayView({ data, highlightedActivities }: { data: any; highlightedActivities?: Set<string> }) {
+  const isHighlighted = (activity: any) => {
+    if (!highlightedActivities || highlightedActivities.size === 0) return false
+    return highlightedActivities.has(`${activity.source}-${activity.timestamp}`)
+  }
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="space-y-2">
@@ -371,10 +443,10 @@ function DayView({ data }: { data: any }) {
                 <CardContent className="p-3">
                   <div className="space-y-2">
                     {(hourData.primaries || []).map((event: any, i: number) => (
-                      <Activity key={`cal-${i}`} activity={event} />
+                      <Activity key={`cal-${i}`} activity={event} isHighlighted={isHighlighted(event)} />
                     ))}
                     {hourData.communications.slice(0, 6).map((comm: any, i: number) => (
-                      <Activity key={`comm-${i}`} activity={comm} />
+                      <Activity key={`comm-${i}`} activity={comm} isHighlighted={isHighlighted(comm)} />
                     ))}
                   </div>
                 </CardContent>
