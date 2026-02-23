@@ -279,11 +279,11 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
                 <SuggestionCard
                   key={suggestion.id}
                   suggestion={suggestion}
-                  isExpanded={expandedId === suggestion.id}
-                  onToggleExpand={() => handleExpand(suggestion.id)}
-                  onApprove={() => handleApprove(suggestion.id)}
-                  onReject={() => handleReject(suggestion.id)}
-                  onUpdate={(updates) => handleUpdate(suggestion.id, updates)}
+                  isExpanded={expandedId === suggestion.id && state !== "submitted" && state !== "submitting"}
+                  onToggleExpand={() => state === "suggestions" && handleExpand(suggestion.id)}
+                  onApprove={() => state === "suggestions" && handleApprove(suggestion.id)}
+                  onReject={() => state === "suggestions" && handleReject(suggestion.id)}
+                  onUpdate={(updates) => state === "suggestions" && handleUpdate(suggestion.id, updates)}
                   projects={pmContext?.projects || []}
                   activityTypes={pmContext?.activityTypes || []}
                 />
@@ -326,7 +326,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
 
             {/* Action buttons */}
             <div className="space-y-2 pt-2">
-              {pendingSuggestions.length > 0 && state !== "submitted" && (
+              {pendingSuggestions.length > 0 && state === "suggestions" && (
                 <Button
                   variant="outline"
                   className="w-full gap-2"
@@ -336,18 +336,19 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
                   Godkjenn alle
                 </Button>
               )}
-              {approvedSuggestions.length > 0 && state !== "submitted" && (
+              {approvedSuggestions.length > 0 && state === "suggestions" && (
                 <Button
                   className="w-full gap-2"
                   onClick={handleSubmit}
-                  disabled={state === "submitting"}
                 >
-                  {state === "submitting" ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
+                  <Send className="h-4 w-4" />
                   Send til system
+                </Button>
+              )}
+              {state === "submitting" && (
+                <Button className="w-full gap-2" disabled>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Sender...
                 </Button>
               )}
               <Button
