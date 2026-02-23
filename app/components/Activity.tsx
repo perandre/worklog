@@ -90,16 +90,8 @@ export default function Activity({ activity, compact = false }: ActivityProps) {
       meta = `Trello · ${activity.type}${board}${list}`
     }
   } else if (activity.source === "github") {
-    title = truncateText(activity.title, compact ? 25 : 40)
-    const actionLabel =
-      activity.type === "commit" ? "Commit" :
-      activity.type === "pr_opened" ? "PR opened" :
-      activity.type === "pr_merged" ? "PR merged" :
-      activity.type === "pr_reviewed" ? "PR reviewed" :
-      activity.type === "review_comment" ? "Review comment" :
-      activity.type === "issue_opened" ? "Issue opened" :
-      activity.type === "issue_commented" ? "Comment" : activity.type
-    meta = `${actionLabel} · ${activity.repoName}`
+    title = activity.repoName || "GitHub"
+    meta = truncateText(activity.title, compact ? 30 : 60)
   }
 
   const copyDuration = () => {
