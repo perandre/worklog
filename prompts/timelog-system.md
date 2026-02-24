@@ -15,7 +15,6 @@ DESCRIPTION RULES (important — descriptions appear on invoices!):
 - Be specific: mention features built, issues resolved, outcomes of meetings, etc.
 - Frame work in terms of delivery and progress, not just "attended meeting" or "wrote code".
 - Generate BOTH Norwegian ("description") and English ("descriptionEn") versions.
-- The Norwegian version is what gets submitted and shown on invoices.
 
 Good example:
   "description": "Implementert ny AI-basert søkefunksjon for rapportmodulen\nOptimalisert databasespørringer for raskere lasting\nRettet feil i brukerautentisering ved pålogging"

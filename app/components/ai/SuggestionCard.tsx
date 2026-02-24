@@ -50,8 +50,8 @@ export default function SuggestionCard({
   activityTypes,
 }: SuggestionCardProps) {
   const [hoursInput, setHoursInput] = useState(formatHM(suggestion.hours))
-  const [descLang, setDescLang] = useState<"no" | "en">("no")
-  const { t } = useTranslation()
+  const { lang, t } = useTranslation()
+  const [descLang, setDescLang] = useState<"no" | "en">(lang)
 
   const isApproved = suggestion.status === "approved"
   const isSkipped = suggestion.status === "skipped"
@@ -179,11 +179,12 @@ export default function SuggestionCard({
               onClick={() => setDescLang((prev) => (prev === "no" ? "en" : "no"))}
               className={cn(
                 "flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors",
-                "border hover:bg-accent"
+                "border hover:bg-accent",
+                descLang !== lang && "bg-accent"
               )}
             >
               <Languages className="h-3 w-3" />
-              {descLang === "no" ? "NO" : "EN"}
+              {descLang === "no" ? "EN" : "NO"}
             </button>
           </div>
           <textarea

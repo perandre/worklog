@@ -20,7 +20,7 @@ interface AiPanelProps {
 }
 
 export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelProps) {
-  const { t } = useTranslation()
+  const { lang, t } = useTranslation()
   const [state, setState] = useState<PanelState>("ready")
   const [loadingStep, setLoadingStep] = useState("")
   const [suggestions, setSuggestions] = useState<TimeLogSuggestion[]>([])
@@ -173,7 +173,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
         activityTypeId: s.activityTypeId,
         date,
         hours: s.hours,
-        description: s.description,
+        description: lang === "en" ? s.descriptionEn : s.description,
         internalNote: s.internalNote,
       }))
 
