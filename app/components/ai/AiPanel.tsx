@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { X, Sparkles, Loader2, Send, RefreshCw, Undo2, CheckCheck } from "lucide-react"
+import { X, Sparkles, Loader2, Send, RefreshCw, Undo2, CheckCheck, Lock } from "lucide-react"
 import { TimeLogSuggestion, AiSuggestionResponse } from "@/app/lib/types/timelog"
 import { PmContext, PmProject, PmActivityType } from "@/app/lib/types/pm"
 import { useTranslation } from "@/app/lib/i18n"
@@ -64,6 +64,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
   const visibleSuggestions = suggestions.filter((s) => s.status !== "skipped")
   const approvedHours = approvedSuggestions.reduce((sum, s) => sum + s.hours, 0)
   const totalHours = visibleSuggestions.reduce((sum, s) => sum + s.hours, 0)
+  const isLocked = pmContext?.timeLockDate ? date <= pmContext.timeLockDate : false
 
   // Auto-load from cache on mount / date change
   const cacheLoadedRef = useRef<string | null>(null)
@@ -357,9 +358,9 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
                   suggestion={suggestion}
                   isExpanded={expandedId === suggestion.id && state !== "submitted" && state !== "submitting"}
                   onToggleExpand={() => state === "suggestions" && handleExpand(suggestion.id)}
-                  onApprove={() => state === "suggestions" && handleApprove(suggestion.id)}
-                  onReject={() => state === "suggestions" && handleReject(suggestion.id)}
-                  onUpdate={(updates) => state === "suggestions" && handleUpdate(suggestion.id, updates)}
+                  onApprove={() => state === "suggestions" && !isLocked && handleApprove(suggestion.id)}
+                  onReject={() => state === "suggestions" && !isLocked && handleReject(suggestion.id)}
+                  onUpdate={(updates) => state === "suggestions" && !isLocked && handleUpdate(suggestion.id, updates)}
                   projects={pmContext?.projects || []}
                   activityTypes={pmContext?.activityTypes || []}
                 />
@@ -400,9 +401,17 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
               </Card>
             )}
 
+            {/* Locked banner */}
+            {isLocked && (
+              <div className="flex items-center gap-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">
+                <Lock className="h-4 w-4 shrink-0" />
+                {t("ai.locked")}
+              </div>
+            )}
+
             {/* Action buttons */}
             <div className="space-y-2 pt-2">
-              {pendingSuggestions.length > 0 && state === "suggestions" && (
+              {pendingSuggestions.length > 0 && state === "suggestions" && !isLocked && (
                 <Button
                   variant="outline"
                   className="w-full gap-2"
@@ -412,7 +421,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
                   {t("ai.approveAll")}
                 </Button>
               )}
-              {approvedSuggestions.length > 0 && state === "suggestions" && (
+              {approvedSuggestions.length > 0 && state === "suggestions" && !isLocked && (
                 <Button
                   className="w-full gap-2"
                   onClick={handleSubmit}

@@ -18,6 +18,19 @@ export async function POST(request: NextRequest) {
     }
 
     const adapter = getPmAdapter(session.user?.email ?? undefined)
+
+    // Server-side guard: reject entries for locked dates
+    const timeLockDate = await adapter.getTimeLockDate()
+    if (timeLockDate) {
+      const lockedEntries = entries.filter((e) => e.date <= timeLockDate)
+      if (lockedEntries.length > 0) {
+        return NextResponse.json(
+          { error: `Hours are locked through ${timeLockDate}` },
+          { status: 403 }
+        )
+      }
+    }
+
     const results = await Promise.all(
       entries.map(async (entry) => {
         try {

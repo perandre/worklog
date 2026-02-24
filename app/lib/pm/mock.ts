@@ -42,6 +42,10 @@ export class MockPmAdapter implements PmAdapter {
     return MOCK_ALLOCATIONS
   }
 
+  async getTimeLockDate(): Promise<string | null> {
+    return null
+  }
+
   async submitTimeLog(entry: TimeLogSubmission): Promise<{ success: boolean; error?: string }> {
     console.log("[MockPM] Submitting time log:", JSON.stringify(entry, null, 2))
     return { success: true }

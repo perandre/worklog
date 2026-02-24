@@ -5,4 +5,5 @@ export type PmContext = {
   projects: PmProject[]
   activityTypes: PmActivityType[]
   allocations: PmAllocation[]
+  timeLockDate: string | null
 }

@@ -121,6 +121,18 @@ export class MilientPmAdapter implements PmAdapter {
     }))
   }
 
+  async getTimeLockDate(): Promise<string | null> {
+    try {
+      const userId = await this.getUserAccountId()
+      const user = await cachedFetch(`userAccount:${userId}`, () =>
+        milientFetch<any>(`userAccounts/${userId}`)
+      )
+      return user.timeLockDate || null
+    } catch {
+      return null
+    }
+  }
+
   async submitTimeLog(
     entry: TimeLogSubmission
   ): Promise<{ success: boolean; error?: string }> {

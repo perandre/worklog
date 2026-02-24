@@ -57,6 +57,7 @@ const translations = {
   "ai.submitting": { en: "Submitting...", no: "Sender..." },
   "ai.regenerate": { en: "Regenerate", no: "Generer på nytt" },
   "ai.allRejected": { en: "All suggestions rejected. Regenerate?", no: "Alle forslag er forkastet. Generer på nytt?" },
+  "ai.locked": { en: "Hours are locked for this date. Unlock in Moment to make changes.", no: "Timer er låst for denne datoen. Lås opp i Moment for å gjøre endringer." },
 
   // Suggestion Card
   "card.project": { en: "Project", no: "Prosjekt" },

@@ -6,5 +6,6 @@ export interface PmAdapter {
   getProjects(): Promise<PmProject[]>
   getActivityTypes(projectId?: string): Promise<PmActivityType[]>
   getAllocations(date: string): Promise<PmAllocation[]>
+  getTimeLockDate(): Promise<string | null>
   submitTimeLog(entry: TimeLogSubmission): Promise<{ success: boolean; error?: string }>
 }
