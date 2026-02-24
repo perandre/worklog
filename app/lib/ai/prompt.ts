@@ -27,7 +27,8 @@ export function assemblePrompt(data: PreprocessedData, pmContext: PmContext, dat
 REGLER:
 - Norsk arbeidsdag er 7,5 timer
 - Rund av til nærmeste 0,5 time per prosjekt (minimum 0,5t)
-- Skriv beskrivelser på norsk, kundevennlig språk
+- Skriv "description" på norsk, kundevennlig språk
+- Skriv "descriptionEn" på engelsk (oversettelse av description)
 - Skriv interne notater på norsk, mer detaljert
 - Svar KUN med gyldig JSON som matcher skjemaet nedenfor
 - Summen av alle timer bør være ~7,5t
@@ -62,6 +63,7 @@ SKJEMA (returner JSON array):
     "activityTypeName": "string",
     "hours": number,
     "description": "Kort, kundevennlig beskrivelse på norsk",
+    "descriptionEn": "Short, client-friendly description in English",
     "internalNote": "Mer detaljert intern notat på norsk",
     "reasoning": "Begrunnelse for forslaget",
     "confidence": "high" | "medium" | "low",
