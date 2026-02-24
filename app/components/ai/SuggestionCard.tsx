@@ -50,7 +50,7 @@ export default function SuggestionCard({
   activityTypes,
 }: SuggestionCardProps) {
   const [hoursInput, setHoursInput] = useState(formatHM(suggestion.hours))
-  const [descLang, setDescLang] = useState<"no" | "en">("en")
+  const [descLang, setDescLang] = useState<"no" | "en">("no")
   const { t } = useTranslation()
 
   const isApproved = suggestion.status === "approved"
@@ -187,8 +187,8 @@ export default function SuggestionCard({
             </button>
           </div>
           <textarea
-            className="w-full rounded-md border bg-background px-3 py-1.5 text-sm resize-none"
-            rows={2}
+            className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+            rows={Math.max(3, (descValue || "").split("\n").length + 1)}
             value={descValue}
             onChange={(e) => {
               if (descLang === "en") {
