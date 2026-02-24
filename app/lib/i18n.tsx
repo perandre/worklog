@@ -20,7 +20,7 @@ const translations = {
   "connect.button": { en: "Connect", no: "Koble til" },
 
   // Footer
-  "footer.hours": { en: "Hours 6:00 – 23:00", no: "Timer 6:00 – 23:00" },
+  "footer.version": { en: "v1.0.0", no: "v1.0.0" },
 
   // Week view
   "week.today": { en: "Today", no: "I dag" },

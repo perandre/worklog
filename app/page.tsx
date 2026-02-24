@@ -433,7 +433,7 @@ function WorklogApp() {
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              {t("footer.hours")}
+              {t("footer.version")}
             </p>
           </div>
         </div>
