@@ -1,14 +1,14 @@
 import { PmAdapter } from "./adapter"
 import { PmProject, PmActivityType, PmAllocation } from "../types/pm"
 import { TimeLogSubmission } from "../types/timelog"
-import { milientFetch, cachedFetch, MILIENT_USER_ID } from "../milient"
+import { milientFetch, milientList, cachedFetch, MILIENT_USER_ID } from "../milient"
 
 export class MilientPmAdapter implements PmAdapter {
   name = "milient"
 
   async getProjects(): Promise<PmProject[]> {
     return cachedFetch("projects", async () => {
-      const data = await milientFetch<any[]>("projects", {
+      const data = await milientList<any>("projects", {
         includes: "base",
       })
 
@@ -23,11 +23,12 @@ export class MilientPmAdapter implements PmAdapter {
   async getActivityTypes(projectId?: string): Promise<PmActivityType[]> {
     const cacheKey = `activities:${projectId || "all"}`
     return cachedFetch(cacheKey, async () => {
+      // In Milient, activity types are "project extensions"
       const entity = projectId
-        ? `projects/${projectId}/activities`
-        : "activities"
+        ? `projects/${projectId}/projectExtensions`
+        : "projectExtensions"
 
-      const data = await milientFetch<any[]>(entity, {
+      const data = await milientList<any>(entity, {
         includes: "base",
       })
 
@@ -39,10 +40,10 @@ export class MilientPmAdapter implements PmAdapter {
   }
 
   async getAllocations(date: string): Promise<PmAllocation[]> {
-    const data = await milientFetch<any[]>("allocations", {
-      includes: "base+project.name",
+    const data = await milientList<any>("allocations", {
+      includes: "base+projectName",
       params: {
-        userId: MILIENT_USER_ID,
+        userAccountId: MILIENT_USER_ID,
         fromDate: date,
         toDate: date,
       },
@@ -51,7 +52,7 @@ export class MilientPmAdapter implements PmAdapter {
     return data.map((a) => ({
       projectId: String(a.projectId),
       projectName: a.projectName,
-      allocatedHours: a.hours || a.allocatedHours || 0,
+      allocatedHours: (a.minutes || 0) / 60,
     }))
   }
 
@@ -63,12 +64,12 @@ export class MilientPmAdapter implements PmAdapter {
         method: "POST",
         body: {
           projectId: Number(entry.projectId),
-          activityId: Number(entry.activityTypeId),
-          date: entry.date,
-          hours: entry.hours,
+          projectExtensionId: Number(entry.activityTypeId),
+          timeRecordDate: entry.date,
+          minutes: Math.round(entry.hours * 60),
           description: entry.description,
           internalNote: entry.internalNote || undefined,
-          userId: Number(MILIENT_USER_ID),
+          userAccountId: Number(MILIENT_USER_ID),
         },
       })
 

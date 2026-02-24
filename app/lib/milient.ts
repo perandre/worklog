@@ -4,6 +4,11 @@ const COMPANY = process.env.MILIENT_COMPANY_CODE || ""
 
 export const MILIENT_USER_ID = process.env.MILIENT_USER_ID || ""
 
+type MilientPage<T> = {
+  content: T[]
+  page: { number: number; size: number; totalElements: number; totalPages: number }
+}
+
 type MilientOptions = {
   includes?: string
   params?: Record<string, string>
@@ -55,6 +60,12 @@ export async function milientFetch<T>(entity: string, opts: MilientOptions = {})
 // Simple TTL cache for data that rarely changes (projects, activity types)
 const cache = new Map<string, { data: unknown; expires: number }>()
 const TTL = 10 * 60 * 1000 // 10 minutes
+
+// Fetch a paginated collection, returning just the content array
+export async function milientList<T>(entity: string, opts: Omit<MilientOptions, "method"> = {}): Promise<T[]> {
+  const data = await milientFetch<MilientPage<T>>(entity, { ...opts, method: "GET" })
+  return data.content
+}
 
 export async function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   const entry = cache.get(key)
