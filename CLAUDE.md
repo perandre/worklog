@@ -4,13 +4,11 @@ After each code change:
 1. Commit with a short descriptive message.
 2. Restart the Next.js dev server: `npm run dev`
 
-## Versioning
-
-The app version is displayed in the footer. When making notable changes (new features, significant fixes), bump the version in **both** places:
+**Before pushing** (every `git push`), bump the version in **both** places:
 - `package.json` → `"version"`
 - `app/lib/i18n.tsx` → `"footer.version"` translation strings
 
-Use semver: patch for fixes, minor for features, major for breaking changes.
+Use semver: patch for bug fixes, minor for features, major for breaking changes. This is mandatory — never push without checking the version.
 
 # Worklog
 
