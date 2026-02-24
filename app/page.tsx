@@ -205,15 +205,15 @@ function WorklogApp() {
         <div className="container mx-auto px-4">
           <div className="flex h-14 items-center justify-between">
             <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              <span className="font-semibold">{t("header.title")}</span>
+              <Calendar className="h-5 w-5 shrink-0" />
+              <span className="font-semibold hidden sm:inline">{t("header.title")}</span>
             </div>
 
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="min-w-[200px] text-center text-sm font-medium">
+              <span className="min-w-0 sm:min-w-[200px] text-center text-sm font-medium truncate">
                 {dateLabel}
               </span>
               <Button variant="ghost" size="icon" onClick={() => navigate(1)}>
@@ -221,11 +221,12 @@ function WorklogApp() {
               </Button>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Button
                 variant={viewMode === "day" ? "secondary" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode("day")}
+                className="hidden sm:inline-flex"
               >
                 {t("header.day")}
               </Button>
@@ -233,10 +234,11 @@ function WorklogApp() {
                 variant={viewMode === "week" ? "secondary" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode("week")}
+                className="hidden sm:inline-flex"
               >
                 {t("header.week")}
               </Button>
-              <Separator orientation="vertical" className="h-6" />
+              <Separator orientation="vertical" className="h-6 hidden sm:block" />
               <Button
                 variant={aiPanelEnabled ? "secondary" : "ghost"}
                 size="icon"
@@ -362,13 +364,14 @@ function WorklogApp() {
             ))}
           </div>
         ) : viewMode === "day" && data ? (
-          <div className={aiPanelEnabled ? "flex gap-6" : ""}>
-            <div className={aiPanelEnabled ? "flex-1 min-w-0" : ""}>
+          <div className={aiPanelEnabled ? "lg:flex lg:gap-6" : ""}>
+            <div className={aiPanelEnabled ? "hidden lg:block lg:flex-1 lg:min-w-0" : ""}>
               <DayView data={data} highlightedActivities={highlightedActivities} />
             </div>
             {aiPanelEnabled && (
-              <div className="w-[400px] shrink-0 ai-panel-enter">
-                <div className="sticky top-[73px] h-[calc(100vh-73px-80px)]">
+              <>
+                {/* Mobile: full-width, replaces day view */}
+                <div className="lg:hidden ai-panel-enter">
                   <AiPanel
                     date={currentDate}
                     hours={data?.hours || null}
@@ -376,7 +379,18 @@ function WorklogApp() {
                     onHighlight={handleHighlight}
                   />
                 </div>
-              </div>
+                {/* Desktop: sticky sidebar */}
+                <div className="hidden lg:block w-[400px] shrink-0 ai-panel-enter">
+                  <div className="sticky top-[73px] h-[calc(100vh-73px-80px)]">
+                    <AiPanel
+                      date={currentDate}
+                      hours={data?.hours || null}
+                      onClose={closeAiPanel}
+                      onHighlight={handleHighlight}
+                    />
+                  </div>
+                </div>
+              </>
             )}
           </div>
         ) : viewMode === "week" && weekData.length > 0 ? (
