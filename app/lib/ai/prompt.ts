@@ -1,5 +1,12 @@
+import { readFileSync } from "fs"
+import { join } from "path"
 import { PmContext } from "../types/pm"
 import { PreprocessedData } from "./preprocess"
+
+const systemPrompt = readFileSync(
+  join(process.cwd(), "prompts", "timelog-system.md"),
+  "utf-8"
+)
 
 export function assemblePrompt(data: PreprocessedData, pmContext: PmContext, date: string): string {
   const projectList = pmContext.projects
@@ -22,20 +29,7 @@ export function assemblePrompt(data: PreprocessedData, pmContext: PmContext, dat
     })
     .join("\n")
 
-  return `You are a time-logging assistant for a Norwegian consulting company.
-
-YOUR PRIMARY JOB: Map the day's activities to the correct projects and activity types.
-Focus on accurate project/activity mapping. Description text is secondary — only add a brief description when it adds useful context. Often the activity titles are sufficient and no extra description is needed.
-
-RULES:
-- Norwegian workday is 7.5 hours
-- Round to nearest 0.5 hour per project (minimum 0.5h)
-- Write descriptions in English, keep them brief or empty if activity titles are self-explanatory
-- Do NOT generate internalNote (leave as empty string)
-- Respond ONLY with valid JSON matching the schema below
-- Total hours should be ~7.5h
-- If rounding exceeds 7.5h, trim the lowest-confidence entry
-
+  const context = `
 DATE: ${date}
 
 AVAILABLE PROJECTS:
@@ -54,25 +48,7 @@ ANALYSIS:
 - Calendar time: ${data.calendarMinutes} minutes
 - Time between meetings: ${data.gapMinutes} minutes
 - Lunch detected: ${data.lunchDetected ? "yes (−30 min)" : "no"}
-- Estimated active time: ${data.totalActiveMinutes} minutes
+- Estimated active time: ${data.totalActiveMinutes} minutes`
 
-SCHEMA (return JSON array):
-[
-  {
-    "projectId": "string",
-    "projectName": "string",
-    "activityTypeId": "string",
-    "activityTypeName": "string",
-    "hours": number,
-    "description": "Brief English description, or empty string if not needed",
-    "internalNote": "",
-    "reasoning": "Why this mapping was chosen",
-    "confidence": "high" | "medium" | "low",
-    "sourceActivities": [
-      { "source": "string", "title": "string", "timestamp": "ISO string", "estimatedMinutes": number }
-    ]
-  }
-]
-
-Generate suggestions now.`
+  return systemPrompt.replace("Generate suggestions now.", context + "\n\nGenerate suggestions now.")
 }
