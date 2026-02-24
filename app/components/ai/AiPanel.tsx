@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { X, Sparkles, Loader2, Send, RefreshCw, Undo2, CheckCheck } from "lucide-react"
@@ -11,6 +11,35 @@ import SuggestionCard from "./SuggestionCard"
 import SuggestionProgress from "./SuggestionProgress"
 
 type PanelState = "ready" | "loading" | "suggestions" | "submitting" | "submitted"
+
+type CachedSuggestions = {
+  suggestions: TimeLogSuggestion[]
+  pmContext: PmContext
+  submitResults: Record<string, { success: boolean; error?: string }>
+  state: "suggestions" | "submitted"
+}
+
+function getCacheKey(date: string) {
+  return `ai-suggestions:${date}`
+}
+
+function loadCache(date: string): CachedSuggestions | null {
+  try {
+    const raw = localStorage.getItem(getCacheKey(date))
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
+function saveCache(date: string, data: CachedSuggestions) {
+  try {
+    localStorage.setItem(getCacheKey(date), JSON.stringify(data))
+  } catch {
+    // localStorage full or unavailable — ignore
+  }
+}
 
 interface AiPanelProps {
   date: string
@@ -36,7 +65,60 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
   const approvedHours = approvedSuggestions.reduce((sum, s) => sum + s.hours, 0)
   const totalHours = visibleSuggestions.reduce((sum, s) => sum + s.hours, 0)
 
-  const generate = useCallback(async () => {
+  // Auto-load from cache on mount / date change
+  const cacheLoadedRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (cacheLoadedRef.current === date) return
+    cacheLoadedRef.current = date
+    const cached = loadCache(date)
+    if (cached) {
+      setSuggestions(cached.suggestions)
+      setPmContext(cached.pmContext)
+      setSubmitResults(cached.submitResults)
+      setState(cached.state)
+      setError(null)
+      setExpandedId(null)
+    } else {
+      // Reset when switching to an uncached date
+      setSuggestions([])
+      setPmContext(null)
+      setSubmitResults({})
+      setState("ready")
+      setError(null)
+      setExpandedId(null)
+    }
+  }, [date])
+
+  // Persist to cache on every suggestion / submitResults / state mutation
+  useEffect(() => {
+    if (state !== "suggestions" && state !== "submitted") return
+    if (suggestions.length === 0) return
+    if (!pmContext) return
+    saveCache(date, { suggestions, pmContext, submitResults, state })
+  }, [date, suggestions, pmContext, submitResults, state])
+
+  const highlightSources = useCallback((suggestion: TimeLogSuggestion) => {
+    const keys = new Set(
+      suggestion.sourceActivities.map((sa) => `${sa.source}-${sa.timestamp}`)
+    )
+    onHighlight(keys)
+  }, [onHighlight])
+
+  const generate = useCallback(async (forceRefresh = false) => {
+    // Load from cache unless forced
+    if (!forceRefresh) {
+      const cached = loadCache(date)
+      if (cached) {
+        setSuggestions(cached.suggestions)
+        setPmContext(cached.pmContext)
+        setSubmitResults(cached.submitResults)
+        setState(cached.state)
+        setError(null)
+        setExpandedId(null)
+        return
+      }
+    }
+
     setState("loading")
     setError(null)
     setSuggestions([])
@@ -77,14 +159,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       setError(err.message)
       setState("ready")
     }
-  }, [date, hours, t])
-
-  const highlightSources = useCallback((suggestion: TimeLogSuggestion) => {
-    const keys = new Set(
-      suggestion.sourceActivities.map((sa) => `${sa.source}-${sa.timestamp}`)
-    )
-    onHighlight(keys)
-  }, [onHighlight])
+  }, [date, hours, t, highlightSources])
 
   const handleExpand = useCallback((id: string) => {
     setExpandedId((prev) => {
@@ -252,7 +327,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
             <p className="text-sm text-muted-foreground text-center">
               {t("ai.emptyDesc")}
             </p>
-            <Button onClick={generate} disabled={!hours}>
+            <Button onClick={() => generate()} disabled={!hours}>
               <Sparkles className="h-4 w-4 mr-2" />
               {t("ai.generate")}
             </Button>
@@ -355,7 +430,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
               <Button
                 variant="outline"
                 className="w-full gap-2"
-                onClick={generate}
+                onClick={() => generate(true)}
                 disabled={state === "submitting"}
               >
                 <RefreshCw className="h-4 w-4" />
