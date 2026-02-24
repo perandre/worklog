@@ -92,7 +92,6 @@ export class MilientPmAdapter implements PmAdapter {
     // Fetch existing time records for the day (replaces non-existent /allocations)
     const userId = await this.getUserAccountId()
     const data = await milientList<any>("timeRecords", {
-      includes: "base",
       params: {
         userAccountId: userId,
         fromDate: date,
