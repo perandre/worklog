@@ -54,10 +54,26 @@ export async function milientFetch<T>(entity: string, opts: MilientOptions = {})
   return res.json()
 }
 
-// Simple TTL cache for data that rarely changes (projects, activity types)
+// Simple TTL + LRU cache for data that rarely changes (projects, activity types)
+const MAX_CACHE_ENTRIES = 200
 const cache = new Map<string, { data: unknown; expires: number }>()
 const inflight = new Map<string, Promise<unknown>>()
 const TTL = 10 * 60 * 1000 // 10 minutes
+
+function evictStale() {
+  const now = Date.now()
+  const expired: string[] = []
+  cache.forEach((entry, key) => {
+    if (now >= entry.expires) expired.push(key)
+  })
+  expired.forEach((key) => cache.delete(key))
+  // If still over limit, drop oldest entries (Map iterates in insertion order)
+  while (cache.size > MAX_CACHE_ENTRIES) {
+    const first = cache.keys().next().value
+    if (first !== undefined) cache.delete(first)
+    else break
+  }
+}
 
 // Fetch a paginated collection, returning just the content array (first page)
 export async function milientList<T>(entity: string, opts: Omit<MilientOptions, "method"> = {}): Promise<T[]> {
@@ -98,6 +114,7 @@ export async function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Pr
   const promise = fetcher().then((data) => {
     cache.set(key, { data, expires: Date.now() + TTL })
     inflight.delete(key)
+    evictStale()
     return data
   }).catch((err) => {
     inflight.delete(key)

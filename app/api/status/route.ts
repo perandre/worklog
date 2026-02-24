@@ -7,6 +7,9 @@ import { isConfigured as isGitHubConfigured } from "@/app/lib/github"
 
 export async function GET() {
   const session = await auth()
+  if (!session?.accessToken) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+  }
   const cookieStore = await cookies()
   const slackToken = cookieStore.get("slack_token")?.value
   const trelloToken = cookieStore.get("trello_token")?.value

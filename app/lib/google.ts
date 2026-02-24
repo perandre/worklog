@@ -283,8 +283,9 @@ export async function getDocActivity(accessToken: string, date: string, timezone
       ])
     )
 
-    let activities: any[] = []
-    for (const ancestorName of ancestorNames) {
+    // Query all ancestors in parallel for better performance
+    const queryAncestor = async (ancestorName: string): Promise<any[]> => {
+      const results: any[] = []
       let pageToken: string | undefined
       do {
         const response = await driveActivity.activity.query({
@@ -296,14 +297,17 @@ export async function getDocActivity(accessToken: string, date: string, timezone
             consolidationStrategy: { none: {} },
           },
         })
-        activities = activities.concat(response.data.activities || [])
+        results.push(...(response.data.activities || []))
         pageToken = response.data.nextPageToken || undefined
       } while (pageToken)
-
       if (debugEnabled) {
-        console.log(`[Drive] Ancestor ${ancestorName} returned ${(activities || []).length} total activities so far`)
+        console.log(`[Drive] Ancestor ${ancestorName} returned ${results.length} activities`)
       }
+      return results
     }
+
+    const ancestorResults = await Promise.all(ancestorNames.map(queryAncestor))
+    const activities = ancestorResults.flat()
 
     console.log(`[Drive] API returned ${activities.length} activities for ${date}`)
     if (debugEnabled) {

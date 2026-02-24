@@ -17,6 +17,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No entries to submit" }, { status: 400 })
     }
 
+    // Validate each entry
+    const dateRe = /^\d{4}-\d{2}-\d{2}$/
+    for (const e of entries) {
+      if (!e.projectId || !e.activityTypeId || !e.date || !e.hours) {
+        return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+      }
+      if (!dateRe.test(e.date)) {
+        return NextResponse.json({ error: "Invalid date format" }, { status: 400 })
+      }
+      if (typeof e.hours !== "number" || e.hours <= 0 || e.hours > 24) {
+        return NextResponse.json({ error: "Invalid hours" }, { status: 400 })
+      }
+    }
+
     const adapter = getPmAdapter(session.user?.email ?? undefined)
 
     // Server-side guard: reject entries for locked dates
