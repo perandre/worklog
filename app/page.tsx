@@ -80,15 +80,15 @@ function WorklogApp() {
   const [slackBannerDismissed, setSlackBannerDismissed] = useState(true)
   const [trelloBannerDismissed, setTrelloBannerDismissed] = useState(true)
   const [githubBannerDismissed, setGithubBannerDismissed] = useState(true)
-  const [aiPanelEnabled, setAiPanelEnabled] = useState(false)
+  const [aiPanelEnabled, setAiPanelEnabled] = useState(true)
   const [highlightedActivities, setHighlightedActivities] = useState<Set<string>>(new Set())
 
   const today = new Date().toISOString().split("T")[0]
 
-  // AI panel: restore from localStorage
+  // AI panel: restore preference from localStorage (default: on)
   useEffect(() => {
-    if (localStorage.getItem("ai-panel-enabled") === "true") {
-      setAiPanelEnabled(true)
+    if (localStorage.getItem("ai-panel-enabled") === "false") {
+      setAiPanelEnabled(false)
     }
   }, [])
 
@@ -99,18 +99,14 @@ function WorklogApp() {
         e.preventDefault()
         setAiPanelEnabled((prev) => {
           const next = !prev
-          if (next) {
-            localStorage.setItem("ai-panel-enabled", "true")
-          } else {
-            localStorage.removeItem("ai-panel-enabled")
-            setHighlightedActivities(new Set())
-          }
+          localStorage.setItem("ai-panel-enabled", String(next))
+          if (!next) setHighlightedActivities(new Set())
           return next
         })
       }
       if (e.key === "Escape" && aiPanelEnabled) {
         setAiPanelEnabled(false)
-        localStorage.removeItem("ai-panel-enabled")
+        localStorage.setItem("ai-panel-enabled", "false")
         setHighlightedActivities(new Set())
       }
     }
@@ -120,7 +116,7 @@ function WorklogApp() {
 
   const closeAiPanel = useCallback(() => {
     setAiPanelEnabled(false)
-    localStorage.removeItem("ai-panel-enabled")
+    localStorage.setItem("ai-panel-enabled", "false")
     setHighlightedActivities(new Set())
   }, [])
 
@@ -247,12 +243,8 @@ function WorklogApp() {
                 onClick={() => {
                   setAiPanelEnabled((prev) => {
                     const next = !prev
-                    if (next) {
-                      localStorage.setItem("ai-panel-enabled", "true")
-                    } else {
-                      localStorage.removeItem("ai-panel-enabled")
-                      setHighlightedActivities(new Set())
-                    }
+                    localStorage.setItem("ai-panel-enabled", String(next))
+                    if (!next) setHighlightedActivities(new Set())
                     return next
                   })
                 }}
