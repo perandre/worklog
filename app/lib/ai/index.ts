@@ -3,7 +3,7 @@ import { MockAiAdapter } from "./mock"
 import { GeminiAdapter } from "./gemini"
 
 export function getAiAdapter(): AiAdapter {
-  const provider = process.env.AI_PROVIDER || "mock"
+  const provider = process.env.AI_PROVIDER || "gemini"
   switch (provider) {
     case "gemini":
       return new GeminiAdapter()
