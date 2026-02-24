@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       unaccountedMinutes: Math.max(0, (7.5 * 60) - (totalHours * 60)),
     })
   } catch (error: any) {
-    console.error("Error generating suggestions:", error)
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    console.error("Error generating suggestions:", error?.message || error)
+    return NextResponse.json({ error: error.message || "Unknown error" }, { status: 500 })
   }
 }

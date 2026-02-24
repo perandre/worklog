@@ -59,7 +59,10 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ date, hours, pmContext: ctx }),
       })
-      if (!sugRes.ok) throw new Error(t("ai.error.generate"))
+      if (!sugRes.ok) {
+        const errData = await sugRes.json().catch(() => null)
+        throw new Error(errData?.error || t("ai.error.generate"))
+      }
       const data: AiSuggestionResponse = await sugRes.json()
 
       setSuggestions(data.suggestions)
