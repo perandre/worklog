@@ -9,7 +9,7 @@ export async function GET() {
   }
 
   try {
-    const adapter = getPmAdapter()
+    const adapter = getPmAdapter(session.user?.email ?? undefined)
     const today = new Date().toISOString().split("T")[0]
 
     const [projects, activityTypes, allocations] = await Promise.all([

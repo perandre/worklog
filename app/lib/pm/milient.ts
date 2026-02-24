@@ -1,10 +1,15 @@
 import { PmAdapter } from "./adapter"
 import { PmProject, PmActivityType, PmAllocation } from "../types/pm"
 import { TimeLogSubmission } from "../types/timelog"
-import { milientFetch, milientList, cachedFetch, MILIENT_USER_ID } from "../milient"
+import { milientFetch, milientList, cachedFetch, resolveUserAccountId } from "../milient"
 
 export class MilientPmAdapter implements PmAdapter {
   name = "milient"
+  private userAccountId: Promise<string>
+
+  constructor(userEmail: string) {
+    this.userAccountId = resolveUserAccountId(userEmail)
+  }
 
   async getProjects(): Promise<PmProject[]> {
     return cachedFetch("projects", async () => {
@@ -12,7 +17,7 @@ export class MilientPmAdapter implements PmAdapter {
         includes: "base",
       })
 
-      return data.map((p) => ({
+      return data.map((p: any) => ({
         id: String(p.id),
         name: p.name,
         code: p.projectNumber || undefined,
@@ -23,7 +28,6 @@ export class MilientPmAdapter implements PmAdapter {
   async getActivityTypes(projectId?: string): Promise<PmActivityType[]> {
     const cacheKey = `activities:${projectId || "all"}`
     return cachedFetch(cacheKey, async () => {
-      // In Milient, activity types are "project extensions"
       const entity = projectId
         ? `projects/${projectId}/projectExtensions`
         : "projectExtensions"
@@ -32,7 +36,7 @@ export class MilientPmAdapter implements PmAdapter {
         includes: "base",
       })
 
-      return data.map((a) => ({
+      return data.map((a: any) => ({
         id: String(a.id),
         name: a.name,
       }))
@@ -40,16 +44,17 @@ export class MilientPmAdapter implements PmAdapter {
   }
 
   async getAllocations(date: string): Promise<PmAllocation[]> {
+    const userId = await this.userAccountId
     const data = await milientList<any>("allocations", {
       includes: "base+projectName",
       params: {
-        userAccountId: MILIENT_USER_ID,
+        userAccountId: userId,
         fromDate: date,
         toDate: date,
       },
     })
 
-    return data.map((a) => ({
+    return data.map((a: any) => ({
       projectId: String(a.projectId),
       projectName: a.projectName,
       allocatedHours: (a.minutes || 0) / 60,
@@ -60,6 +65,7 @@ export class MilientPmAdapter implements PmAdapter {
     entry: TimeLogSubmission
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      const userId = await this.userAccountId
       await milientFetch("timeRecords", {
         method: "POST",
         body: {
@@ -69,7 +75,7 @@ export class MilientPmAdapter implements PmAdapter {
           minutes: Math.round(entry.hours * 60),
           description: entry.description,
           internalNote: entry.internalNote || undefined,
-          userAccountId: Number(MILIENT_USER_ID),
+          userAccountId: Number(userId),
         },
       })
 

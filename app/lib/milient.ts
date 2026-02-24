@@ -2,8 +2,6 @@ const BASE_URL = process.env.MILIENT_BASE_URL || "https://app.moment.team"
 const API_KEY = process.env.MILIENT_API_KEY || ""
 const COMPANY = process.env.MILIENT_COMPANY_CODE || ""
 
-export const MILIENT_USER_ID = process.env.MILIENT_USER_ID || ""
-
 type MilientPage<T> = {
   content: T[]
   page: { number: number; size: number; totalElements: number; totalPages: number }
@@ -73,4 +71,17 @@ export async function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Pr
   const data = await fetcher()
   cache.set(key, { data, expires: Date.now() + TTL })
   return data
+}
+
+export async function resolveUserAccountId(email: string): Promise<string> {
+  return cachedFetch(`uid:${email}`, async () => {
+    const users = await milientList<any>("userAccounts", {
+      params: { email },
+    })
+    const match = users.find(
+      (u: any) => u.email?.toLowerCase() === email.toLowerCase()
+    )
+    if (!match) throw new Error(`Milient: no user found for email ${email}`)
+    return String(match.userAccountId ?? match.id)
+  })
 }

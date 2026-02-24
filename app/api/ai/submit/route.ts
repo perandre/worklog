@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No entries to submit" }, { status: 400 })
     }
 
-    const adapter = getPmAdapter()
+    const adapter = getPmAdapter(session.user?.email ?? undefined)
     const results = await Promise.all(
       entries.map(async (entry) => {
         try {
