@@ -81,6 +81,14 @@ function WorklogApp() {
   const [trelloBannerDismissed, setTrelloBannerDismissed] = useState(true)
   const [githubBannerDismissed, setGithubBannerDismissed] = useState(true)
   const [aiPanelEnabled, setAiPanelEnabled] = useState(true)
+  const [isDesktop, setIsDesktop] = useState(true)
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)")
+    setIsDesktop(mq.matches)
+    const handler = (e: MediaQueryListEvent) => setIsDesktop(e.matches)
+    mq.addEventListener("change", handler)
+    return () => mq.removeEventListener("change", handler)
+  }, [])
   const [highlightedActivities, setHighlightedActivities] = useState<Set<string>>(new Set())
 
   const today = new Date().toISOString().split("T")[0]
@@ -364,14 +372,26 @@ function WorklogApp() {
             ))}
           </div>
         ) : viewMode === "day" && data ? (
-          <div className={aiPanelEnabled ? "lg:flex lg:gap-6" : ""}>
-            <div className={aiPanelEnabled ? "hidden lg:block lg:flex-1 lg:min-w-0" : ""}>
-              <DayView data={data} highlightedActivities={highlightedActivities} />
-            </div>
-            {aiPanelEnabled && (
-              <>
-                {/* Mobile: full-width, replaces day view */}
-                <div className="lg:hidden ai-panel-enter">
+          <div className={aiPanelEnabled && isDesktop ? "flex gap-6" : ""}>
+            {!(aiPanelEnabled && !isDesktop) && (
+              <div className={aiPanelEnabled && isDesktop ? "flex-1 min-w-0" : ""}>
+                <DayView data={data} highlightedActivities={highlightedActivities} />
+              </div>
+            )}
+            {aiPanelEnabled && !isDesktop && (
+              <div className="ai-panel-enter">
+                <AiPanel
+                  key={currentDate}
+                  date={currentDate}
+                  hours={data?.hours || null}
+                  onClose={closeAiPanel}
+                  onHighlight={handleHighlight}
+                />
+              </div>
+            )}
+            {aiPanelEnabled && isDesktop && (
+              <div className="w-[400px] shrink-0 ai-panel-enter">
+                <div className="sticky top-[73px] h-[calc(100vh-73px-80px)]">
                   <AiPanel
                     key={currentDate}
                     date={currentDate}
@@ -380,19 +400,7 @@ function WorklogApp() {
                     onHighlight={handleHighlight}
                   />
                 </div>
-                {/* Desktop: sticky sidebar */}
-                <div className="hidden lg:block w-[400px] shrink-0 ai-panel-enter">
-                  <div className="sticky top-[73px] h-[calc(100vh-73px-80px)]">
-                    <AiPanel
-                      key={currentDate}
-                      date={currentDate}
-                      hours={data?.hours || null}
-                      onClose={closeAiPanel}
-                      onHighlight={handleHighlight}
-                    />
-                  </div>
-                </div>
-              </>
+              </div>
             )}
           </div>
         ) : viewMode === "week" && weekData.length > 0 ? (
