@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
-import { AlertCircle, ChevronLeft, ChevronRight, Calendar, Link2, LogOut, MessageSquare, Github, X, Globe } from "lucide-react"
+import { AlertCircle, ChevronLeft, ChevronRight, Calendar, Link2, LogOut, MessageSquare, Github, X, Globe, Sparkles } from "lucide-react"
 
 function formatDate(dateStr: string, locale: string) {
   const d = new Date(dateStr + "T12:00:00")
@@ -85,13 +85,9 @@ function WorklogApp() {
 
   const today = new Date().toISOString().split("T")[0]
 
-  // AI panel: URL param + localStorage detection
+  // AI panel: restore from localStorage
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get("ai") === "1") {
-      localStorage.setItem("ai-panel-enabled", "true")
-      setAiPanelEnabled(true)
-    } else if (localStorage.getItem("ai-panel-enabled") === "true") {
+    if (localStorage.getItem("ai-panel-enabled") === "true") {
       setAiPanelEnabled(true)
     }
   }, [])
@@ -245,6 +241,25 @@ function WorklogApp() {
                 {t("header.week")}
               </Button>
               <Separator orientation="vertical" className="h-6" />
+              <Button
+                variant={aiPanelEnabled ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => {
+                  setAiPanelEnabled((prev) => {
+                    const next = !prev
+                    if (next) {
+                      localStorage.setItem("ai-panel-enabled", "true")
+                    } else {
+                      localStorage.removeItem("ai-panel-enabled")
+                      setHighlightedActivities(new Set())
+                    }
+                    return next
+                  })
+                }}
+                title="AI time log (⌘⇧L)"
+              >
+                <Sparkles className="h-4 w-4" />
+              </Button>
               <LangToggle />
               <ThemeToggle />
             </div>
