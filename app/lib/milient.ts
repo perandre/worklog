@@ -59,10 +59,18 @@ export async function milientFetch<T>(entity: string, opts: MilientOptions = {})
 const cache = new Map<string, { data: unknown; expires: number }>()
 const TTL = 10 * 60 * 1000 // 10 minutes
 
-// Fetch a paginated collection, returning just the content array
+// Fetch a paginated collection, returning just the content array (first page)
 export async function milientList<T>(entity: string, opts: Omit<MilientOptions, "method"> = {}): Promise<T[]> {
   const data = await milientFetch<MilientPage<T>>(entity, { ...opts, method: "GET" })
   return data.content
+}
+
+// Fetch all items from a paginated collection using noLimit=true
+export async function milientListAll<T>(entity: string, opts: Omit<MilientOptions, "method"> = {}): Promise<T[]> {
+  return milientList<T>(entity, {
+    ...opts,
+    params: { ...opts.params, noLimit: "true" },
+  })
 }
 
 export async function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
@@ -75,13 +83,14 @@ export async function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Pr
 
 export async function resolveUserAccountId(email: string): Promise<string> {
   return cachedFetch(`uid:${email}`, async () => {
-    const users = await milientList<any>("userAccounts", {
-      params: { email },
+    // Use include/base+email so the email field is returned
+    const users = await milientListAll<any>("userAccounts", {
+      includes: "base+email",
     })
     const match = users.find(
       (u: any) => u.email?.toLowerCase() === email.toLowerCase()
     )
     if (!match) throw new Error(`Milient: no user found for email ${email}`)
-    return String(match.userAccountId ?? match.id)
+    return String(match.id)
   })
 }

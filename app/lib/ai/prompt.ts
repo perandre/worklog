@@ -13,13 +13,26 @@ export function assemblePrompt(data: PreprocessedData, pmContext: PmContext, dat
     .map((p) => `- ${p.name} (ID: ${p.id}${p.code ? `, code: ${p.code}` : ""})`)
     .join("\n")
 
-  const activityTypeList = pmContext.activityTypes
-    .map((t) => `- ${t.name} (ID: ${t.id})`)
+  // Group activity types by project for clarity
+  const typesByProject = new Map<string, typeof pmContext.activityTypes>()
+  for (const t of pmContext.activityTypes) {
+    const pid = t.projectId || "unknown"
+    if (!typesByProject.has(pid)) typesByProject.set(pid, [])
+    typesByProject.get(pid)!.push(t)
+  }
+
+  const activityTypeList = pmContext.projects
+    .map((p) => {
+      const types = typesByProject.get(p.id) || []
+      if (types.length === 0) return null
+      return `  ${p.name}:\n` + types.map((t) => `    - ${t.name} (ID: ${t.id})`).join("\n")
+    })
+    .filter(Boolean)
     .join("\n")
 
-  const allocationList = pmContext.allocations.length > 0
-    ? pmContext.allocations.map((a) => `- ${a.projectName}: ${a.allocatedHours}t`).join("\n")
-    : "No allocations registered."
+  const existingLogsList = pmContext.allocations.length > 0
+    ? pmContext.allocations.map((a) => `- ${a.projectName}: ${a.allocatedHours}h already logged`).join("\n")
+    : "No time logged yet today."
 
   const activityList = data.activities
     .map((a) => {
@@ -35,11 +48,11 @@ DATE: ${date}
 AVAILABLE PROJECTS:
 ${projectList}
 
-ACTIVITY TYPES:
+ACTIVITY TYPES (grouped by project):
 ${activityTypeList}
 
-ALLOCATIONS (hints for distribution):
-${allocationList}
+ALREADY LOGGED TODAY (avoid double-logging):
+${existingLogsList}
 
 TODAY'S ACTIVITIES:
 ${activityList}

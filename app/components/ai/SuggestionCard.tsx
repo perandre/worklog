@@ -56,6 +56,10 @@ export default function SuggestionCard({
   const isApproved = suggestion.status === "approved"
   const isSkipped = suggestion.status === "skipped"
 
+  // Filter activity types to the selected project (fall back to all if no match)
+  const projectTypes = activityTypes.filter((t) => t.projectId === suggestion.projectId)
+  const filteredActivityTypes = projectTypes.length > 0 ? projectTypes : activityTypes
+
   if (isSkipped) return null
 
   // Compact view
@@ -153,13 +157,13 @@ export default function SuggestionCard({
               className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
               value={suggestion.activityTypeId}
               onChange={(e) => {
-                const at = activityTypes.find((t) => t.id === e.target.value)
+                const at = filteredActivityTypes.find((t) => t.id === e.target.value)
                 if (at) {
                   onUpdate({ activityTypeId: at.id, activityTypeName: at.name })
                 }
               }}
             >
-              {activityTypes.map((t) => (
+              {filteredActivityTypes.map((t) => (
                 <option key={t.id} value={t.id}>{t.name}</option>
               ))}
             </select>

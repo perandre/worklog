@@ -143,8 +143,8 @@ export class MockAiAdapter implements AiAdapter {
     const suggestions: any[] = []
     let totalHours = 0
 
-    for (const [projectId, projectActivities] of groups) {
-      const project = projects.find((p) => p.id === projectId)
+    for (const [projectId, projectActivities] of Array.from(groups.entries())) {
+      const project = projects.find((p: any) => p.id === projectId)
       if (!project) continue
 
       // Calculate minutes for this project
@@ -161,7 +161,7 @@ export class MockAiAdapter implements AiAdapter {
       totalHours += hours
 
       const actType = guessActivityType(projectActivities, activityTypes)
-      const confidence = projectActivities.some((a) => a.source === "calendar") ? "high" : "medium"
+      const confidence = projectActivities.some((a: any) => a.source === "calendar") ? "high" : "medium"
 
       const desc = generateDescription(projectActivities)
       suggestions.push({
@@ -175,7 +175,7 @@ export class MockAiAdapter implements AiAdapter {
         internalNote: generateInternalNote(projectActivities),
         reasoning: `${projectActivities.length} aktiviteter matchet til dette prosjektet basert på nøkkelord og tidsbruk.`,
         confidence,
-        sourceActivities: projectActivities.map((a) => ({
+        sourceActivities: projectActivities.map((a: any) => ({
           source: a.source,
           title: a.title,
           timestamp: a.timestamp,
