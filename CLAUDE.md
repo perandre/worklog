@@ -1,3 +1,7 @@
+# Agent Rules
+
+See also: [ARCHITECTURE.md](./ARCHITECTURE.md) | [PATTERNS.md](./PATTERNS.md) | [DOMAIN-LOGIC.md](./DOMAIN-LOGIC.md)
+
 ## Workflow
 
 After each code change:
@@ -10,145 +14,24 @@ After each code change:
 
 Use semver: patch for bug fixes, minor for features, major for breaking changes. This is mandatory — never push without checking the version.
 
-# Worklog
+## Scope Discipline
 
-A summary of your day - shows hour-by-hour activity from Google (Calendar, Gmail, Docs) and Slack.
+- Only make changes that are directly requested or clearly necessary.
+- Don't add features, refactor, or "improve" beyond what was asked.
+- Don't add comments, docstrings, or type annotations to code you didn't change.
+- Don't create new files unless absolutely required — prefer editing existing ones.
+- Don't create documentation files unless explicitly requested.
 
-## Tech Stack
+## Git Protocol
 
-- **Framework**: Next.js 14 (App Router)
-- **Auth**: NextAuth.js v5 (JWT mode, no database)
-- **UI**: shadcn/ui + Tailwind CSS v4
-- **Icons**: Lucide React
-- **APIs**: Google (gmail, calendar, driveactivity v2, drive v3), Slack (search, users, conversations)
-- **Hosting**: Vercel
+- Commit after each logical change, not in large batches.
+- Never force-push, amend published commits, or skip hooks.
+- Never push without explicit user request.
+- Never commit `.env.local` or files containing secrets.
 
-## Project Structure
+## Human Approval Gates
 
-```
-app/
-├── api/
-│   ├── auth/
-│   │   ├── [...nextauth]/route.ts  # NextAuth handler
-│   │   └── slack/
-│   │       ├── route.ts            # GET - Initiates Slack OAuth
-│   │       ├── callback/route.ts   # GET - Handles OAuth callback
-│   │       └── disconnect/route.ts # POST - Clears Slack token
-│   ├── activities/route.ts         # GET /api/activities?date=YYYY-MM-DD
-│   └── status/route.ts             # GET /api/status
-├── components/
-│   └── Activity.tsx                # Activity item with source icons
-├── lib/
-│   ├── auth.ts                     # NextAuth config + Google OAuth
-│   ├── google.ts                   # Calendar, Gmail, Drive + Drive Activity APIs
-│   ├── slack.ts                    # Slack search API + user resolution
-│   └── aggregator.ts               # Hour bucketing logic
-├── globals.css                     # Tailwind + shadcn CSS variables
-├── layout.tsx                      # Root layout with dark mode
-└── page.tsx                        # Main page (client component)
-
-components/ui/                      # shadcn components
-├── alert.tsx                       # Error messages
-├── badge.tsx                       # Labels and status indicators
-├── button.tsx                      # All buttons
-├── card.tsx                        # Content containers
-├── separator.tsx                   # Visual dividers
-├── skeleton.tsx                    # Loading states
-└── theme-toggle.tsx                # Dark/light mode switch
-
-lib/
-└── utils.ts                        # cn() class merge utility
-```
-
-## UI Components
-
-### shadcn/ui
-- `Button` - Navigation, actions, toggle buttons (ghost, secondary, outline variants)
-- `Card` - Hour blocks, auth prompt, content containers
-- `Badge` - "Today" indicator, service status (Google/Slack)
-- `Alert` - Error messages (destructive variant)
-- `Skeleton` - Loading placeholders
-- `Separator` - Vertical divider in header
-
-### Custom
-- `Activity` - Renders items with colored source icons, supports compact mode
-- `ThemeToggle` - Sun/moon icon button for dark/light mode
-
-## Theming
-
-Dark mode via CSS variables in `globals.css`:
-1. Checks `localStorage` for saved preference
-2. Falls back to system preference (`prefers-color-scheme`)
-3. Toggle persists choice to `localStorage`
-
-Brand colors (both themes):
-- Slack: `#4A154B` (purple)
-- Gmail: `#EA4335` (red)
-- Calendar: `#4285F4` (blue)
-- Docs: `#34A853` (green)
-
-## Auth
-
-### Google (via NextAuth)
-- Scopes: `gmail.readonly`, `calendar.readonly`, `drive.activity.readonly`, `drive.metadata.readonly`
-- Tokens stored in encrypted JWT cookie
-- Auto-refresh on expiry
-
-### Slack (custom OAuth)
-- Scopes: `search:read`, `users:read`, `im:read`
-- User token stored in HTTP-only cookie (`slack_token`)
-- Each user authenticates with their own Slack account
-
-## Data Flow
-
-1. `page.tsx` fetches `/api/activities?date=YYYY-MM-DD`
-2. API route gets Google token from session, Slack token from cookie
-3. Calls Google/Slack APIs in parallel
-4. `aggregator.ts` buckets activities by hour (6-23)
-5. Returns `{ hours, summary, sources }`
-
-## Drive Activity Notes
-
-- Drive Activity v2 is queried with a time filter plus `detail.action_detail_case` (edit/create/comment).
-- Actor matching happens at the action level; activities can contain multiple actions/actors.
-- Shared drives are included by querying each shared drive `ancestorName` in addition to `items/root`.
-- If shared drive listing is blocked, update the hardcoded shared drive IDs in `app/lib/google.ts`.
-- Debug: set `DEBUG_DRIVE_ACTIVITY=1` to log a small sample of raw activity payloads.
-
-## Display Rules
-
-- Work hours: 6 AM - 11 PM (empty hours hidden)
-- Calendar events: All shown per hour (`primaries` array)
-- Communications: Max 6/hour (day view), 3/hour (week view)
-- Slack DMs: No `#` prefix, channels get `#` prefix
-- Docs: Shows edit/create/delete/rename/move actions
-- Duration: Click to copy (shows checkmark feedback)
-
-## Running Locally
-
-```bash
-npm install
-npm run dev  # http://localhost:3000
-```
-
-Note: Slack OAuth requires HTTPS. For local Slack testing, use ngrok or deploy to Vercel first.
-
-## Environment Variables
-
-```
-NEXTAUTH_URL=https://your-app.vercel.app
-NEXTAUTH_SECRET=random-secret
-GOOGLE_CLIENT_ID=...
-GOOGLE_CLIENT_SECRET=...
-SLACK_CLIENT_ID=...
-SLACK_CLIENT_SECRET=...
-```
-
-## Launch Checklist (Company-Wide)
-
-- Restrict Google sign-in to the company domain in NextAuth callbacks.
-- Disable debug logging in production; never log raw Drive Activity payloads.
-- Move shared drive IDs out of code (config/DB/env) and lock access.
-- Review OAuth scopes and remove any that are not required.
-- Add a privacy note (no server-side storage; data fetched on demand).
-- Provide a token revocation/disconnect flow for Google (in addition to Slack).
+Always ask before:
+- Destructive operations (deleting files/branches, dropping data)
+- Actions visible to others (pushing, creating PRs/issues, sending messages)
+- Architectural decisions with multiple valid approaches
