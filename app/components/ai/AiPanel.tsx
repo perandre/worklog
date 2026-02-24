@@ -12,7 +12,11 @@ import SuggestionProgress from "./SuggestionProgress"
 
 type PanelState = "ready" | "loading" | "suggestions" | "submitting" | "submitted"
 
+const CACHE_VERSION = 2
+
 type CachedSuggestions = {
+  v: number
+  date: string
   suggestions: TimeLogSuggestion[]
   pmContext: PmContext
   submitResults: Record<string, { success: boolean; error?: string }>
@@ -27,15 +31,21 @@ function loadCache(date: string): CachedSuggestions | null {
   try {
     const raw = localStorage.getItem(getCacheKey(date))
     if (!raw) return null
-    return JSON.parse(raw)
+    const parsed = JSON.parse(raw)
+    // Invalidate old or mismatched cache
+    if (parsed.v !== CACHE_VERSION || parsed.date !== date) {
+      localStorage.removeItem(getCacheKey(date))
+      return null
+    }
+    return parsed
   } catch {
     return null
   }
 }
 
-function saveCache(date: string, data: CachedSuggestions) {
+function saveCache(date: string, data: Omit<CachedSuggestions, "v" | "date">) {
   try {
-    localStorage.setItem(getCacheKey(date), JSON.stringify(data))
+    localStorage.setItem(getCacheKey(date), JSON.stringify({ ...data, v: CACHE_VERSION, date }))
   } catch {
     // localStorage full or unavailable — ignore
   }
@@ -91,12 +101,15 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
   }, [date])
 
   // Persist to cache on every suggestion / submitResults / state mutation
+  // Note: date is read but not in deps — we only save when suggestions actually change,
+  // not when navigating to a new date (which would write stale data to the new key)
   useEffect(() => {
     if (state !== "suggestions" && state !== "submitted") return
     if (suggestions.length === 0) return
     if (!pmContext) return
     saveCache(date, { suggestions, pmContext, submitResults, state })
-  }, [date, suggestions, pmContext, submitResults, state])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestions, pmContext, submitResults, state])
 
   const highlightSources = useCallback((suggestion: TimeLogSuggestion) => {
     const keys = new Set(
