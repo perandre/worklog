@@ -32,6 +32,7 @@ export async function milientFetch<T>(entity: string, opts: MilientOptions = {})
 
   const credentials = Buffer.from(`apikey:${API_KEY}`).toString("base64")
 
+  const t0 = Date.now()
   const res = await fetch(url, {
     method,
     headers: {
@@ -40,12 +41,10 @@ export async function milientFetch<T>(entity: string, opts: MilientOptions = {})
     },
     body: body ? JSON.stringify(body) : undefined,
   })
+  const ms = Date.now() - t0
 
-  if (process.env.MILIENT_DEBUG) {
-    const clone = res.clone()
-    const text = await clone.text()
-    console.log(`[Milient] ${method} ${entity}:`, text.slice(0, 500))
-  }
+  const shortUrl = entity + (includes ? `/include/${includes}` : "") + (params ? "?" + new URLSearchParams(params).toString() : "")
+  console.log(`[Milient] ${method} ${shortUrl} → ${res.status} (${ms}ms)`)
 
   if (!res.ok) {
     const text = await res.text()
@@ -57,6 +56,7 @@ export async function milientFetch<T>(entity: string, opts: MilientOptions = {})
 
 // Simple TTL cache for data that rarely changes (projects, activity types)
 const cache = new Map<string, { data: unknown; expires: number }>()
+const inflight = new Map<string, Promise<unknown>>()
 const TTL = 10 * 60 * 1000 // 10 minutes
 
 // Fetch a paginated collection, returning just the content array (first page)
@@ -90,9 +90,21 @@ export async function milientListAll<T>(entity: string, opts: Omit<MilientOption
 export async function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   const entry = cache.get(key)
   if (entry && Date.now() < entry.expires) return entry.data as T
-  const data = await fetcher()
-  cache.set(key, { data, expires: Date.now() + TTL })
-  return data
+
+  // Deduplicate concurrent requests for the same key
+  const existing = inflight.get(key)
+  if (existing) return existing as Promise<T>
+
+  const promise = fetcher().then((data) => {
+    cache.set(key, { data, expires: Date.now() + TTL })
+    inflight.delete(key)
+    return data
+  }).catch((err) => {
+    inflight.delete(key)
+    throw err
+  })
+  inflight.set(key, promise)
+  return promise
 }
 
 export async function resolveUserAccountId(email: string): Promise<string> {
