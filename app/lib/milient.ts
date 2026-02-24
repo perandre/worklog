@@ -65,12 +65,26 @@ export async function milientList<T>(entity: string, opts: Omit<MilientOptions, 
   return data.content
 }
 
-// Fetch all items from a paginated collection using noLimit=true
+// Fetch all items from a paginated collection
 export async function milientListAll<T>(entity: string, opts: Omit<MilientOptions, "method"> = {}): Promise<T[]> {
-  return milientList<T>(entity, {
+  const pageSize = "500"
+  const firstPage = await milientFetch<MilientPage<T>>(entity, {
     ...opts,
-    params: { ...opts.params, noLimit: "true" },
+    params: { ...opts.params, size: pageSize, page: "0" },
+    method: "GET",
   })
+  if (firstPage.page.totalPages <= 1) return firstPage.content
+
+  // Fetch remaining pages in parallel
+  const remaining = Array.from({ length: firstPage.page.totalPages - 1 }, (_, i) =>
+    milientFetch<MilientPage<T>>(entity, {
+      ...opts,
+      params: { ...opts.params, size: pageSize, page: String(i + 1) },
+      method: "GET",
+    })
+  )
+  const pages = await Promise.all(remaining)
+  return [firstPage, ...pages].flatMap((p) => p.content)
 }
 
 export async function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
