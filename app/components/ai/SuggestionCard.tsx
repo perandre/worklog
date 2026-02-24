@@ -50,7 +50,7 @@ export default function SuggestionCard({
   activityTypes,
 }: SuggestionCardProps) {
   const [hoursInput, setHoursInput] = useState(formatHM(suggestion.hours))
-  const [descLang, setDescLang] = useState<"no" | "en">("no")
+  const [descLang, setDescLang] = useState<"no" | "en">("en")
   const { t } = useTranslation()
 
   const isApproved = suggestion.status === "approved"
@@ -193,17 +193,6 @@ export default function SuggestionCard({
                 onUpdate({ description: e.target.value })
               }
             }}
-          />
-        </div>
-
-        {/* Internal Note */}
-        <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">{t("card.internalNote")}</label>
-          <textarea
-            className="w-full rounded-md border bg-background px-3 py-1.5 text-sm resize-none"
-            rows={2}
-            value={suggestion.internalNote}
-            onChange={(e) => onUpdate({ internalNote: e.target.value })}
           />
         </div>
 

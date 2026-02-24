@@ -12,7 +12,7 @@ export function assemblePrompt(data: PreprocessedData, pmContext: PmContext, dat
 
   const allocationList = pmContext.allocations.length > 0
     ? pmContext.allocations.map((a) => `- ${a.projectName}: ${a.allocatedHours}t`).join("\n")
-    : "Ingen allokeringer registrert."
+    : "No allocations registered."
 
   const activityList = data.activities
     .map((a) => {
@@ -22,39 +22,41 @@ export function assemblePrompt(data: PreprocessedData, pmContext: PmContext, dat
     })
     .join("\n")
 
-  return `Du er en assistent som hjelper med timeføring for norske konsulentselskaper.
+  return `You are a time-logging assistant for a Norwegian consulting company.
 
-REGLER:
-- Norsk arbeidsdag er 7,5 timer
-- Rund av til nærmeste 0,5 time per prosjekt (minimum 0,5t)
-- Skriv "description" på norsk, kundevennlig språk
-- Skriv "descriptionEn" på engelsk (oversettelse av description)
-- Skriv interne notater på norsk, mer detaljert
-- Svar KUN med gyldig JSON som matcher skjemaet nedenfor
-- Summen av alle timer bør være ~7,5t
-- Hvis avrunding gir mer enn 7,5t, trim posten med lavest konfidanse
+YOUR PRIMARY JOB: Map the day's activities to the correct projects and activity types.
+Focus on accurate project/activity mapping. Description text is secondary — only add a brief description when it adds useful context. Often the activity titles are sufficient and no extra description is needed.
 
-DATO: ${date}
+RULES:
+- Norwegian workday is 7.5 hours
+- Round to nearest 0.5 hour per project (minimum 0.5h)
+- Write descriptions in English, keep them brief or empty if activity titles are self-explanatory
+- Do NOT generate internalNote (leave as empty string)
+- Respond ONLY with valid JSON matching the schema below
+- Total hours should be ~7.5h
+- If rounding exceeds 7.5h, trim the lowest-confidence entry
 
-TILGJENGELIGE PROSJEKTER:
+DATE: ${date}
+
+AVAILABLE PROJECTS:
 ${projectList}
 
-AKTIVITETSTYPER:
+ACTIVITY TYPES:
 ${activityTypeList}
 
-ALLOKERINGER (hint for fordeling):
+ALLOCATIONS (hints for distribution):
 ${allocationList}
 
-DAGENS AKTIVITETER:
+TODAY'S ACTIVITIES:
 ${activityList}
 
-ANALYSE:
-- Kalendertid: ${data.calendarMinutes} minutter
-- Tid mellom møter: ${data.gapMinutes} minutter
-- Lunsj detektert: ${data.lunchDetected ? "ja (−30 min)" : "nei"}
-- Estimert aktiv tid: ${data.totalActiveMinutes} minutter
+ANALYSIS:
+- Calendar time: ${data.calendarMinutes} minutes
+- Time between meetings: ${data.gapMinutes} minutes
+- Lunch detected: ${data.lunchDetected ? "yes (−30 min)" : "no"}
+- Estimated active time: ${data.totalActiveMinutes} minutes
 
-SKJEMA (returner JSON array):
+SCHEMA (return JSON array):
 [
   {
     "projectId": "string",
@@ -62,10 +64,9 @@ SKJEMA (returner JSON array):
     "activityTypeId": "string",
     "activityTypeName": "string",
     "hours": number,
-    "description": "Kort, kundevennlig beskrivelse på norsk",
-    "descriptionEn": "Short, client-friendly description in English",
-    "internalNote": "Mer detaljert intern notat på norsk",
-    "reasoning": "Begrunnelse for forslaget",
+    "description": "Brief English description, or empty string if not needed",
+    "internalNote": "",
+    "reasoning": "Why this mapping was chosen",
     "confidence": "high" | "medium" | "low",
     "sourceActivities": [
       { "source": "string", "title": "string", "timestamp": "ISO string", "estimatedMinutes": number }
@@ -73,5 +74,5 @@ SKJEMA (returner JSON array):
   }
 ]
 
-Generer forslag nå.`
+Generate suggestions now.`
 }
