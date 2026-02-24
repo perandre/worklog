@@ -384,6 +384,7 @@ function WorklogApp() {
                 <div className="hidden lg:block w-[400px] shrink-0 ai-panel-enter">
                   <div className="sticky top-[73px] h-[calc(100vh-73px-80px)]">
                     <AiPanel
+                      key={currentDate}
                       date={currentDate}
                       hours={data?.hours || null}
                       onClose={closeAiPanel}
