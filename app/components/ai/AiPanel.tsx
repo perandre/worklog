@@ -221,7 +221,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
 
   return (
     <div
-      className="flex flex-col h-full border-l border-t bg-background rounded-tl-lg"
+      className="flex flex-col h-full border bg-background rounded-lg"
       onKeyDown={handleKeyDown}
       tabIndex={-1}
     >
