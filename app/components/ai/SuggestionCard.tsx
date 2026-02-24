@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Check, X, ChevronDown, ChevronUp, Languages } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/app/lib/i18n"
 import { TimeLogSuggestion } from "@/app/lib/types/timelog"
 import { PmProject, PmActivityType } from "@/app/lib/types/pm"
 
@@ -50,13 +51,14 @@ export default function SuggestionCard({
 }: SuggestionCardProps) {
   const [hoursInput, setHoursInput] = useState(formatHM(suggestion.hours))
   const [descLang, setDescLang] = useState<"no" | "en">("no")
+  const { t } = useTranslation()
 
   const isApproved = suggestion.status === "approved"
   const isSkipped = suggestion.status === "skipped"
 
   if (isSkipped) return null
 
-  // Compact view — activity type on left, hours floated right
+  // Compact view
   if (!isExpanded) {
     return (
       <Card
@@ -107,7 +109,7 @@ export default function SuggestionCard({
 
         {/* Project dropdown */}
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Prosjekt</label>
+          <label className="text-xs text-muted-foreground">{t("card.project")}</label>
           <select
             className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
             value={suggestion.projectId}
@@ -127,7 +129,7 @@ export default function SuggestionCard({
         {/* Hours + Activity Type row */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Timer</label>
+            <label className="text-xs text-muted-foreground">{t("card.hours")}</label>
             <input
               type="text"
               className="w-full rounded-md border bg-background px-3 py-1.5 text-sm tabular-nums"
@@ -146,7 +148,7 @@ export default function SuggestionCard({
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Type</label>
+            <label className="text-xs text-muted-foreground">{t("card.type")}</label>
             <select
               className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
               value={suggestion.activityTypeId}
@@ -167,9 +169,7 @@ export default function SuggestionCard({
         {/* Description with language toggle */}
         <div className="space-y-1">
           <div className="flex items-center justify-between">
-            <label className="text-xs text-muted-foreground">
-              {descLang === "en" ? "Description" : "Beskrivelse"}
-            </label>
+            <label className="text-xs text-muted-foreground">{t("card.description")}</label>
             <button
               type="button"
               onClick={() => setDescLang((prev) => (prev === "no" ? "en" : "no"))}
@@ -198,7 +198,7 @@ export default function SuggestionCard({
 
         {/* Internal Note */}
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Intern notat</label>
+          <label className="text-xs text-muted-foreground">{t("card.internalNote")}</label>
           <textarea
             className="w-full rounded-md border bg-background px-3 py-1.5 text-sm resize-none"
             rows={2}
@@ -209,7 +209,7 @@ export default function SuggestionCard({
 
         {/* Reasoning */}
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Basert på</label>
+          <label className="text-xs text-muted-foreground">{t("card.basedOn")}</label>
           <div className="text-xs text-muted-foreground space-y-0.5">
             {suggestion.sourceActivities.slice(0, 5).map((sa, i) => (
               <div key={i} className="flex items-center gap-1">
@@ -220,7 +220,7 @@ export default function SuggestionCard({
             ))}
             {suggestion.sourceActivities.length > 5 && (
               <div className="text-muted-foreground/70">
-                + {suggestion.sourceActivities.length - 5} til
+                + {suggestion.sourceActivities.length - 5} {t("card.more")}
               </div>
             )}
           </div>
@@ -230,11 +230,11 @@ export default function SuggestionCard({
         <div className="flex items-center gap-2 pt-1">
           <Button size="sm" onClick={onApprove} className="gap-1">
             <Check className="h-3 w-3" />
-            Godkjenn
+            {t("card.approve")}
           </Button>
           <Button size="sm" variant="outline" onClick={onReject} className="gap-1">
             <X className="h-3 w-3" />
-            Forkast
+            {t("card.reject")}
           </Button>
         </div>
       </CardContent>

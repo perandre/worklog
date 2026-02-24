@@ -6,6 +6,7 @@ import { SessionProvider } from "next-auth/react"
 import Activity from "./components/Activity"
 import AiPanel from "./components/ai/AiPanel"
 import WelcomePage from "./components/WelcomePage"
+import { I18nProvider, useTranslation } from "./lib/i18n"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -13,20 +14,16 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
-import { AlertCircle, ChevronLeft, ChevronRight, Calendar, Link2, LogOut, MessageSquare, Github, X } from "lucide-react"
+import { AlertCircle, ChevronLeft, ChevronRight, Calendar, Link2, LogOut, MessageSquare, Github, X, Globe } from "lucide-react"
 
-function formatDate(dateStr: string) {
+function formatDate(dateStr: string, locale: string) {
   const d = new Date(dateStr + "T12:00:00")
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-  return `${days[d.getDay()]} ${months[d.getMonth()]} ${d.getDate()}`
+  return d.toLocaleDateString(locale, { weekday: "short", month: "short", day: "numeric" })
 }
 
-function formatDateLong(dateStr: string) {
+function formatDateLong(dateStr: string, locale: string) {
   const d = new Date(dateStr + "T12:00:00")
-  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-  return `${days[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`
+  return d.toLocaleDateString(locale, { weekday: "long", month: "short", day: "numeric", year: "numeric" })
 }
 
 function getMonday(dateStr: string) {
@@ -47,8 +44,32 @@ function getWeekDays(mondayDateStr: string) {
   return days
 }
 
+function formatWeekRange(mondayDateStr: string, locale: string) {
+  const days = getWeekDays(mondayDateStr)
+  const start = new Date(days[0] + "T12:00:00")
+  const end = new Date(days[4] + "T12:00:00")
+  const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" }
+  return `${start.toLocaleDateString(locale, opts)} – ${end.toLocaleDateString(locale, { ...opts, year: "numeric" })}`
+}
+
+function LangToggle() {
+  const { lang, setLang } = useTranslation()
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      onClick={() => setLang(lang === "en" ? "no" : "en")}
+      title={lang === "en" ? "Bytt til norsk" : "Switch to English"}
+    >
+      <span className="text-xs font-semibold">{lang === "en" ? "EN" : "NO"}</span>
+    </Button>
+  )
+}
+
 function WorklogApp() {
   const { data: session, status } = useSession()
+  const { t, lang } = useTranslation()
+  const locale = lang === "no" ? "nb-NO" : "en-US"
   const [currentDate, setCurrentDate] = useState(() => new Date().toISOString().split("T")[0])
   const [viewMode, setViewMode] = useState<"day" | "week">("day")
   const [data, setData] = useState<any>(null)
@@ -56,7 +77,7 @@ function WorklogApp() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [serviceStatus, setServiceStatus] = useState({ google: false, slack: false, trello: false, github: false })
-  const [slackBannerDismissed, setSlackBannerDismissed] = useState(true) // Start true to avoid flash
+  const [slackBannerDismissed, setSlackBannerDismissed] = useState(true)
   const [trelloBannerDismissed, setTrelloBannerDismissed] = useState(true)
   const [githubBannerDismissed, setGithubBannerDismissed] = useState(true)
   const [aiPanelEnabled, setAiPanelEnabled] = useState(false)
@@ -91,7 +112,6 @@ function WorklogApp() {
           return next
         })
       }
-      // Esc closes panel
       if (e.key === "Escape" && aiPanelEnabled) {
         setAiPanelEnabled(false)
         localStorage.removeItem("ai-panel-enabled")
@@ -183,15 +203,8 @@ function WorklogApp() {
 
   const dateLabel =
     viewMode === "day"
-      ? formatDateLong(currentDate)
-      : (() => {
-          const monday = getMonday(currentDate)
-          const days = getWeekDays(monday)
-          const start = new Date(days[0] + "T12:00:00")
-          const end = new Date(days[4] + "T12:00:00")
-          const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-          return `${months[start.getMonth()]} ${start.getDate()} - ${months[end.getMonth()]} ${end.getDate()}, ${end.getFullYear()}`
-        })()
+      ? formatDateLong(currentDate, locale)
+      : formatWeekRange(getMonday(currentDate), locale)
 
   return (
     <div className="min-h-screen bg-background">
@@ -201,7 +214,7 @@ function WorklogApp() {
           <div className="flex h-14 items-center justify-between">
             <div className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              <span className="font-semibold">Worklog</span>
+              <span className="font-semibold">{t("header.title")}</span>
             </div>
 
             <div className="flex items-center gap-1">
@@ -222,16 +235,17 @@ function WorklogApp() {
                 size="sm"
                 onClick={() => setViewMode("day")}
               >
-                Day
+                {t("header.day")}
               </Button>
               <Button
                 variant={viewMode === "week" ? "secondary" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode("week")}
               >
-                Week
+                {t("header.week")}
               </Button>
               <Separator orientation="vertical" className="h-6" />
+              <LangToggle />
               <ThemeToggle />
             </div>
           </div>
@@ -254,13 +268,13 @@ function WorklogApp() {
                 <MessageSquare className="h-5 w-5" />
               </div>
               <div>
-                <p className="font-medium">Connect Slack</p>
-                <p className="text-sm text-muted-foreground">See your messages alongside calendar events</p>
+                <p className="font-medium">{t("connect.slack.title")}</p>
+                <p className="text-sm text-muted-foreground">{t("connect.slack.desc")}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Button asChild>
-                <a href="/api/auth/slack">Connect</a>
+                <a href="/api/auth/slack">{t("connect.button")}</a>
               </Button>
               <Button
                 variant="ghost"
@@ -283,13 +297,13 @@ function WorklogApp() {
                 <span className="text-xs font-semibold">T</span>
               </div>
               <div>
-                <p className="font-medium">Connect Trello</p>
-                <p className="text-sm text-muted-foreground">See your Trello card activity alongside your worklog.</p>
+                <p className="font-medium">{t("connect.trello.title")}</p>
+                <p className="text-sm text-muted-foreground">{t("connect.trello.desc")}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Button asChild>
-                <a href="/api/auth/trello">Connect</a>
+                <a href="/api/auth/trello">{t("connect.button")}</a>
               </Button>
               <Button
                 variant="ghost"
@@ -312,13 +326,13 @@ function WorklogApp() {
                 <Github className="h-5 w-5" />
               </div>
               <div>
-                <p className="font-medium">Connect GitHub</p>
-                <p className="text-sm text-muted-foreground">See your commits, PRs, and issues</p>
+                <p className="font-medium">{t("connect.github.title")}</p>
+                <p className="text-sm text-muted-foreground">{t("connect.github.desc")}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Button asChild>
-                <a href="/api/auth/github">Connect</a>
+                <a href="/api/auth/github">{t("connect.button")}</a>
               </Button>
               <Button
                 variant="ghost"
@@ -359,7 +373,7 @@ function WorklogApp() {
             )}
           </div>
         ) : viewMode === "week" && weekData.length > 0 ? (
-          <WeekView weekData={weekData} today={today} />
+          <WeekView weekData={weekData} today={today} locale={locale} />
         ) : null}
       </main>
 
@@ -412,7 +426,7 @@ function WorklogApp() {
               )}
             </div>
             <p className="text-xs text-muted-foreground">
-              Hours 6:00 - 23:00
+              {t("footer.hours")}
             </p>
           </div>
         </div>
@@ -459,15 +473,16 @@ function DayView({ data, highlightedActivities }: { data: any; highlightedActivi
   )
 }
 
-function WeekView({ weekData, today }: { weekData: any[]; today: string }) {
+function WeekView({ weekData, today, locale }: { weekData: any[]; today: string; locale: string }) {
+  const { t } = useTranslation()
   return (
     <div className="overflow-x-auto pb-4">
     <div className="grid grid-cols-5 gap-3 min-w-[1200px]">
       {weekData.map(({ date, data }) => (
         <div key={date} className="min-w-0">
           <div className="flex items-center gap-2 mb-3">
-            <h3 className="font-medium text-sm">{formatDate(date)}</h3>
-            {date === today && <Badge variant="secondary">Today</Badge>}
+            <h3 className="font-medium text-sm">{formatDate(date, locale)}</h3>
+            {date === today && <Badge variant="secondary">{t("week.today")}</Badge>}
           </div>
           <div className="space-y-1.5">
             {Array.from({ length: 17 }, (_, i) => i + 6).map((hour) => {
@@ -505,7 +520,9 @@ function WeekView({ weekData, today }: { weekData: any[]; today: string }) {
 export default function Home() {
   return (
     <SessionProvider>
-      <WorklogApp />
+      <I18nProvider>
+        <WorklogApp />
+      </I18nProvider>
     </SessionProvider>
   )
 }

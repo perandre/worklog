@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { X, Sparkles, Loader2, Send, RefreshCw, Undo2, CheckCheck } from "lucide-react"
 import { TimeLogSuggestion, AiSuggestionResponse } from "@/app/lib/types/timelog"
 import { PmContext, PmProject, PmActivityType } from "@/app/lib/types/pm"
+import { useTranslation } from "@/app/lib/i18n"
 import SuggestionCard from "./SuggestionCard"
 import SuggestionProgress from "./SuggestionProgress"
 
@@ -19,6 +20,7 @@ interface AiPanelProps {
 }
 
 export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelProps) {
+  const { t } = useTranslation()
   const [state, setState] = useState<PanelState>("ready")
   const [loadingStep, setLoadingStep] = useState("")
   const [suggestions, setSuggestions] = useState<TimeLogSuggestion[]>([])
@@ -42,22 +44,22 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
     setSubmitResults({})
 
     try {
-      setLoadingStep("Henter prosjekter...")
+      setLoadingStep(t("ai.loading.projects"))
       const ctxRes = await fetch("/api/ai/pm-context")
-      if (!ctxRes.ok) throw new Error("Kunne ikke hente prosjektdata")
+      if (!ctxRes.ok) throw new Error(t("ai.error.projects"))
       const ctx: PmContext = await ctxRes.json()
       setPmContext(ctx)
 
-      setLoadingStep("Analyserer aktiviteter...")
+      setLoadingStep(t("ai.loading.analyzing"))
       await new Promise((r) => setTimeout(r, 400))
 
-      setLoadingStep("Genererer forslag...")
+      setLoadingStep(t("ai.loading.generating"))
       const sugRes = await fetch("/api/ai/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ date, hours, pmContext: ctx }),
       })
-      if (!sugRes.ok) throw new Error("Kunne ikke generere forslag")
+      if (!sugRes.ok) throw new Error(t("ai.error.generate"))
       const data: AiSuggestionResponse = await sugRes.json()
 
       setSuggestions(data.suggestions)
@@ -72,7 +74,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       setError(err.message)
       setState("ready")
     }
-  }, [date, hours])
+  }, [date, hours, t])
 
   const highlightSources = useCallback((suggestion: TimeLogSuggestion) => {
     const keys = new Set(
@@ -99,7 +101,6 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       const updated = prev.map((s) =>
         s.id === id ? { ...s, status: "approved" as const } : s
       )
-      // Auto-expand next pending
       const currentIdx = updated.findIndex((s) => s.id === id)
       const nextPending = updated.find((s, i) => i > currentIdx && s.status === "pending")
       if (nextPending) {
@@ -123,7 +124,6 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       s.id === id ? { ...s, status: "skipped" as const } : s
     ))
 
-    // Auto-expand next pending
     const nextPending = suggestions.find((s, i) => i > idx && s.status === "pending" && s.id !== id)
     if (nextPending) {
       setExpandedId(nextPending.id)
@@ -133,7 +133,6 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       onHighlight(new Set())
     }
 
-    // Clear undo after 5s
     setTimeout(() => setRecentlyRejected(null), 5000)
   }, [suggestions, highlightSources, onHighlight])
 
@@ -180,7 +179,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ entries }),
       })
-      if (!res.ok) throw new Error("Innsending feilet")
+      if (!res.ok) throw new Error(t("ai.error.submit"))
       const data = await res.json()
 
       const results: Record<string, { success: boolean; error?: string }> = {}
@@ -193,9 +192,8 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       setError(err.message)
       setState("suggestions")
     }
-  }, [approvedSuggestions, date])
+  }, [approvedSuggestions, date, t])
 
-  // Keyboard handler
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     if (state !== "suggestions") return
 
@@ -229,7 +227,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4" />
-          <span className="font-semibold text-sm">Timelogging</span>
+          <span className="font-semibold text-sm">{t("ai.title")}</span>
         </div>
         <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
           <X className="h-4 w-4" />
@@ -249,11 +247,11 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <Sparkles className="h-8 w-8 text-muted-foreground" />
             <p className="text-sm text-muted-foreground text-center">
-              Analyser dagens aktiviteter og få forslag til timeføring.
+              {t("ai.emptyDesc")}
             </p>
             <Button onClick={generate} disabled={!hours}>
               <Sparkles className="h-4 w-4 mr-2" />
-              Generer forslag
+              {t("ai.generate")}
             </Button>
           </div>
         )}
@@ -294,11 +292,11 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
             {recentlyRejected && (
               <div className="flex items-center justify-between rounded-md bg-muted p-2 text-sm">
                 <span className="text-muted-foreground">
-                  {recentlyRejected.suggestion.projectName} forkastet
+                  {recentlyRejected.suggestion.projectName} {t("ai.rejected")}
                 </span>
                 <Button size="sm" variant="ghost" onClick={handleUndo} className="gap-1">
                   <Undo2 className="h-3 w-3" />
-                  Angre
+                  {t("ai.undo")}
                 </Button>
               </div>
             )}
@@ -311,11 +309,11 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
                     const result = submitResults[s.id]
                     return (
                       <div key={s.id} className="flex items-center justify-between text-sm">
-                        <span>{s.projectName} — {s.hours}t</span>
+                        <span>{s.projectName} — {s.hours}{t("progress.hoursUnit")}</span>
                         {result?.success ? (
-                          <span className="text-green-500 text-xs">Sendt</span>
+                          <span className="text-green-500 text-xs">{t("ai.sent")}</span>
                         ) : (
-                          <span className="text-destructive text-xs">{result?.error || "Feil"}</span>
+                          <span className="text-destructive text-xs">{result?.error || t("ai.error")}</span>
                         )}
                       </div>
                     )
@@ -333,7 +331,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
                   onClick={handleApproveAll}
                 >
                   <CheckCheck className="h-4 w-4" />
-                  Godkjenn alle
+                  {t("ai.approveAll")}
                 </Button>
               )}
               {approvedSuggestions.length > 0 && state === "suggestions" && (
@@ -342,13 +340,13 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
                   onClick={handleSubmit}
                 >
                   <Send className="h-4 w-4" />
-                  Send til system
+                  {t("ai.submit")}
                 </Button>
               )}
               {state === "submitting" && (
                 <Button className="w-full gap-2" disabled>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Sender...
+                  {t("ai.submitting")}
                 </Button>
               )}
               <Button
@@ -358,14 +356,14 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
                 disabled={state === "submitting"}
               >
                 <RefreshCw className="h-4 w-4" />
-                Generer på nytt
+                {t("ai.regenerate")}
               </Button>
             </div>
 
             {/* Empty state */}
             {visibleSuggestions.length === 0 && suggestions.length > 0 && (
               <p className="text-sm text-muted-foreground text-center py-4">
-                Alle forslag er forkastet. Generer på nytt?
+                {t("ai.allRejected")}
               </p>
             )}
           </>

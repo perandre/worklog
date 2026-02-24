@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { useTranslation } from "@/app/lib/i18n"
 
 interface SuggestionProgressProps {
   approvedHours: number
@@ -19,13 +20,14 @@ export default function SuggestionProgress({
   totalHours,
   targetHours = 7.5,
 }: SuggestionProgressProps) {
+  const { t } = useTranslation()
   const percentage = Math.min(100, Math.round((approvedHours / targetHours) * 100))
 
   return (
     <div className="space-y-2">
       <div className="text-center">
         <span className="text-3xl font-bold tabular-nums">{formatHM(approvedHours)}</span>
-        <span className="text-lg text-muted-foreground"> / {formatHM(targetHours)}t</span>
+        <span className="text-lg text-muted-foreground"> / {formatHM(targetHours)}{t("progress.hoursUnit")}</span>
       </div>
       <div className="relative h-2 w-full rounded-full bg-muted overflow-hidden">
         <div
