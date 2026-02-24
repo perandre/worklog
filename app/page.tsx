@@ -373,6 +373,7 @@ function WorklogApp() {
                 {/* Mobile: full-width, replaces day view */}
                 <div className="lg:hidden ai-panel-enter">
                   <AiPanel
+                    key={currentDate}
                     date={currentDate}
                     hours={data?.hours || null}
                     onClose={closeAiPanel}
