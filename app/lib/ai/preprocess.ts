@@ -37,6 +37,7 @@ function getActivityTitle(a: RawActivity): string {
   if (a.source === "docs") return `${a.type || "Edited"}: ${a.title || "Untitled doc"}`
   if (a.source === "trello") return a.cardName || "Trello activity"
   if (a.source === "github") return `${a.repoName || "GitHub"}: ${a.title || ""}`
+  if (a.source === "jira") return `${a.issueKey || "Jira"}: ${a.issueSummary || a.detail || ""}`
   return a.title || "Unknown activity"
 }
 

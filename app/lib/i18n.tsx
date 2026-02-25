@@ -17,6 +17,8 @@ const translations = {
   "connect.trello.desc": { en: "See your Trello card activity alongside your worklog.", no: "Se Trello-kortaktivitet ved siden av arbeidsdagen din." },
   "connect.github.title": { en: "Connect GitHub", no: "Koble til GitHub" },
   "connect.github.desc": { en: "See your commits, PRs, and issues", no: "Se commits, PRs og issues" },
+  "connect.jira.title": { en: "Connect Jira", no: "Koble til Jira" },
+  "connect.jira.desc": { en: "See your Jira issue transitions and comments", no: "Se Jira-saksoverganger og kommentarer" },
   "connect.button": { en: "Connect", no: "Koble til" },
 
   // Footer
