@@ -130,7 +130,7 @@ export async function getJiraActivitiesForDate(
       },
       body: JSON.stringify({
         jql,
-        expand: ["changelog"],
+        expand: "changelog",
         fields: ["summary", "project", "comment"],
         maxResults: 100,
       }),
