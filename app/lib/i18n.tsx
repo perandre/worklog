@@ -22,7 +22,7 @@ const translations = {
   "connect.button": { en: "Connect", no: "Koble til" },
 
   // Footer
-  "footer.version": { en: "v1.1.6", no: "v1.1.6" },
+  "footer.version": { en: "v1.2.0", no: "v1.2.0" },
 
   // Week view
   "week.today": { en: "Today", no: "I dag" },
