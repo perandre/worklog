@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const preprocessed = preprocessActivities(hours)
     const adapter = getAiAdapter()
     const prompt = assemblePrompt(preprocessed, pmContext, date)
-    console.log(`[AI] ${preprocessed.activities.length} activities, ${prompt.length} chars, ${pmContext.projects.length} projects`)
+    console.log(`[AI] ${preprocessed.activities.length} activities, ${pmContext.projects.length} projects, ${pmContext.activityTypes.length} activity types → ${prompt.length} chars`)
 
     const t1 = Date.now()
     const schema = { type: "array", items: { type: "object" } }
