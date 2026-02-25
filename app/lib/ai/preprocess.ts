@@ -33,12 +33,12 @@ export type PreprocessedData = {
 function getActivityTitle(a: RawActivity): string {
   if (a.source === "calendar") return a.title || "Untitled event"
   if (a.source === "gmail") return a.subject || "Untitled email"
-  if (a.source === "slack") return `${a.isDm ? "DM" : "#" + a.channel}: ${a.text || ""}`.slice(0, 100)
+  if (a.source === "slack") return `${a.isDm ? "DM" : "#" + a.channel}: ${a.text || ""}`.slice(0, 60)
   if (a.source === "docs") return `${a.type || "Edited"}: ${a.title || "Untitled doc"}`
   if (a.source === "trello") return a.cardName || "Trello activity"
-  if (a.source === "github") return `${a.repoName || "GitHub"}: ${a.title || ""}`
-  if (a.source === "jira") return `${a.issueKey || "Jira"}: ${a.issueSummary || a.detail || ""}`
-  return a.title || "Unknown activity"
+  if (a.source === "github") return `${a.repoName || "GitHub"}: ${a.title || ""}`.slice(0, 80)
+  if (a.source === "jira") return `${a.issueKey || "Jira"}: ${(a.issueSummary || a.detail || "").slice(0, 80)}`
+  return (a.title || "Unknown activity").slice(0, 80)
 }
 
 function minutesBetween(a: string, b: string): number {
@@ -72,19 +72,6 @@ export function preprocessActivities(hours: Record<string, any>): PreprocessedDa
   }
 
   activities.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-
-  // Cap low-signal sources to keep prompt size manageable
-  const SOURCE_CAPS: Record<string, number> = { slack: 5, gmail: 5 }
-  const DEFAULT_CAP = 10
-  const sourceCounts = new Map<string, number>()
-  const capped: FlatActivity[] = []
-  for (const a of activities) {
-    const cap = SOURCE_CAPS[a.source] ?? DEFAULT_CAP
-    const count = sourceCounts.get(a.source) || 0
-    if (count < cap) { capped.push(a); sourceCounts.set(a.source, count + 1) }
-  }
-  activities.length = 0
-  capped.forEach((a) => activities.push(a))
 
   // Compute calendar minutes
   let calendarMinutes = 0
