@@ -100,17 +100,18 @@ export async function getJiraActivitiesForDate(
   const updatedTokenCookieValue = updatedCookieData ? encodeCookie(JSON.stringify(updatedCookieData)) : null
 
   try {
-    // Get current user's accountId
-    const meRes = await fetch("https://api.atlassian.com/me", {
+    // Get current user's accountId via Jira-specific endpoint
+    const meRes = await fetch(`https://api.atlassian.com/ex/jira/${cookieData.cloudId}/rest/api/3/myself`, {
       headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
     })
     if (!meRes.ok) {
-      console.error("[Jira] Failed to fetch /me", meRes.status)
+      const body = await meRes.text()
+      console.error("[Jira] Failed to fetch /myself", meRes.status, body)
       return { activities: [], updatedTokenCookie: updatedTokenCookieValue }
     }
     const me = await meRes.json()
-    const accountId = me.account_id
-    console.log(`[Jira] Authenticated as ${me.name || accountId}`)
+    const accountId = me.accountId
+    console.log(`[Jira] Authenticated as ${me.displayName || accountId}`)
 
     // JQL search for issues updated on the target date
     const nextDate = new Date(date + "T00:00:00Z")
