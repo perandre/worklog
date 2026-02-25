@@ -102,6 +102,11 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       setError(null)
       setExpandedId(null)
       setExistingExpanded(false)
+      // Eagerly fetch pmContext so existing records show before generating
+      fetch("/api/ai/pm-context")
+        .then((r) => r.ok ? r.json() : null)
+        .then((ctx) => { if (ctx) setPmContext(ctx) })
+        .catch(() => {})
     }
   }, [date])
 
@@ -339,6 +344,34 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
           </div>
         )}
 
+        {/* Existing records — shown in all states when records exist */}
+        {existingRecords.length > 0 && (
+          <div className="rounded-md border bg-muted/30">
+            <button
+              onClick={() => setExistingExpanded((prev) => !prev)}
+              className="flex items-center justify-between w-full px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <Clock className="h-3.5 w-3.5" />
+                <span>{t("existing.title")} ({existingHours.toFixed(1)}{t("progress.hoursUnit")})</span>
+              </div>
+              {existingExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+            </button>
+            {existingExpanded && (
+              <div className="px-3 pb-2 space-y-1">
+                {existingRecords.map((r, i) => (
+                  <div key={i} className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="truncate mr-2">
+                      {r.projectName}{r.activityTypeName ? ` · ${r.activityTypeName}` : ""}
+                    </span>
+                    <span className="tabular-nums shrink-0">{r.hours.toFixed(1)}{t("progress.hoursUnit")}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Ready state */}
         {state === "ready" && (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
@@ -369,33 +402,6 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
               totalHours={totalHours}
               existingHours={existingHours}
             />
-
-            {existingRecords.length > 0 && (
-              <div className="rounded-md border bg-muted/30">
-                <button
-                  onClick={() => setExistingExpanded((prev) => !prev)}
-                  className="flex items-center justify-between w-full px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>{t("existing.title")} ({existingHours.toFixed(1)}{t("progress.hoursUnit")})</span>
-                  </div>
-                  {existingExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
-                </button>
-                {existingExpanded && (
-                  <div className="px-3 pb-2 space-y-1">
-                    {existingRecords.map((r, i) => (
-                      <div key={i} className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span className="truncate mr-2">
-                          {r.projectName}{r.activityTypeName ? ` · ${r.activityTypeName}` : ""}
-                        </span>
-                        <span className="tabular-nums shrink-0">{r.hours.toFixed(1)}{t("progress.hoursUnit")}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
 
             <div className="space-y-2">
               {visibleSuggestions.map((suggestion) => (
