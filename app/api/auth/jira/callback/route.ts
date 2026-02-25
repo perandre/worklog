@@ -65,15 +65,14 @@ export async function GET(request: NextRequest) {
     }
 
     const site = resources[0]
-    const jiraToken = {
-      accessToken: tokenData.access_token,
+    // Only store refresh token + metadata — access token JWT is too large for cookies
+    const jiraCookie = {
       refreshToken: tokenData.refresh_token,
       cloudId: site.id,
       siteUrl: site.url,
-      expiresAt: Date.now() + tokenData.expires_in * 1000,
     }
 
-    const encodedToken = Buffer.from(JSON.stringify(jiraToken)).toString("base64")
+    const encodedToken = Buffer.from(JSON.stringify(jiraCookie)).toString("base64")
 
     console.log(`[Jira] OAuth successful, connected to ${site.name} (${site.url}), cookie length: ${encodedToken.length}`)
 

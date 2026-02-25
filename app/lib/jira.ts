@@ -6,6 +6,13 @@ export type JiraTokenData = {
   expiresAt: number
 }
 
+// Cookie only stores the minimal fields (access token is too large for cookies)
+type JiraCookieData = {
+  refreshToken: string
+  cloudId: string
+  siteUrl: string
+}
+
 export type JiraActivity = {
   source: "jira"
   type: "issue_transitioned" | "issue_commented"
@@ -28,24 +35,17 @@ export function encodeCookie(json: string): string {
 export function isConfigured(tokenCookie?: string): boolean {
   if (!tokenCookie) return false
   try {
-    const data = JSON.parse(decodeCookie(tokenCookie)) as Partial<JiraTokenData>
-    return !!(data.accessToken && data.refreshToken && data.cloudId)
+    const data = JSON.parse(decodeCookie(tokenCookie)) as Partial<JiraCookieData>
+    return !!(data.refreshToken && data.cloudId)
   } catch {
     return false
   }
 }
 
-export async function ensureFreshToken(
-  tokenCookie: string
-): Promise<{ token: JiraTokenData; updatedCookie: string | null }> {
-  const token = JSON.parse(decodeCookie(tokenCookie)) as JiraTokenData
-
-  // If token doesn't expire within 60s, return as-is
-  if (token.expiresAt && Date.now() < token.expiresAt - 60_000) {
-    return { token, updatedCookie: null }
-  }
-
-  console.log("[Jira] Token expired or expiring soon, refreshing...")
+async function getAccessToken(
+  cookieData: JiraCookieData
+): Promise<{ accessToken: string; updatedCookieData: JiraCookieData | null }> {
+  console.log("[Jira] Fetching fresh access token via refresh_token...")
 
   const res = await fetch("https://auth.atlassian.com/oauth/token", {
     method: "POST",
@@ -54,7 +54,7 @@ export async function ensureFreshToken(
       grant_type: "refresh_token",
       client_id: process.env.JIRA_CLIENT_ID!,
       client_secret: process.env.JIRA_CLIENT_SECRET!,
-      refresh_token: token.refreshToken,
+      refresh_token: cookieData.refreshToken,
     }),
   })
 
@@ -65,16 +65,16 @@ export async function ensureFreshToken(
   }
 
   const data = await res.json()
-  const updatedToken: JiraTokenData = {
-    ...token,
-    accessToken: data.access_token,
-    refreshToken: data.refresh_token || token.refreshToken,
-    expiresAt: Date.now() + data.expires_in * 1000,
+
+  // If Atlassian rotated the refresh token, we need to update the cookie
+  const newRefreshToken = data.refresh_token
+  let updatedCookieData: JiraCookieData | null = null
+  if (newRefreshToken && newRefreshToken !== cookieData.refreshToken) {
+    updatedCookieData = { ...cookieData, refreshToken: newRefreshToken }
   }
 
-  const updatedCookie = encodeCookie(JSON.stringify(updatedToken))
-  console.log("[Jira] Token refreshed successfully")
-  return { token: updatedToken, updatedCookie }
+  console.log("[Jira] Got fresh access token")
+  return { accessToken: data.access_token, updatedCookieData }
 }
 
 function extractTextFromAdf(node: any): string {
@@ -95,16 +95,18 @@ export async function getJiraActivitiesForDate(
     return { activities: [], updatedTokenCookie: null }
   }
 
-  const { token, updatedCookie } = await ensureFreshToken(tokenCookie)
+  const cookieData = JSON.parse(decodeCookie(tokenCookie)) as JiraCookieData
+  const { accessToken, updatedCookieData } = await getAccessToken(cookieData)
+  const updatedTokenCookieValue = updatedCookieData ? encodeCookie(JSON.stringify(updatedCookieData)) : null
 
   try {
     // Get current user's accountId
     const meRes = await fetch("https://api.atlassian.com/me", {
-      headers: { Authorization: `Bearer ${token.accessToken}`, Accept: "application/json" },
+      headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
     })
     if (!meRes.ok) {
       console.error("[Jira] Failed to fetch /me", meRes.status)
-      return { activities: [], updatedTokenCookie: updatedCookie }
+      return { activities: [], updatedTokenCookie: updatedTokenCookieValue }
     }
     const me = await meRes.json()
     const accountId = me.account_id
@@ -116,19 +118,19 @@ export async function getJiraActivitiesForDate(
     const nextDateStr = nextDate.toISOString().split("T")[0]
 
     const jql = `updated >= "${date}" AND updated < "${nextDateStr}" ORDER BY updated DESC`
-    const searchUrl = new URL(`https://api.atlassian.com/ex/jira/${token.cloudId}/rest/api/3/search`)
+    const searchUrl = new URL(`https://api.atlassian.com/ex/jira/${cookieData.cloudId}/rest/api/3/search`)
     searchUrl.searchParams.set("jql", jql)
     searchUrl.searchParams.set("expand", "changelog")
     searchUrl.searchParams.set("fields", "summary,project,comment")
     searchUrl.searchParams.set("maxResults", "100")
 
     const searchRes = await fetch(searchUrl.toString(), {
-      headers: { Authorization: `Bearer ${token.accessToken}`, Accept: "application/json" },
+      headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
     })
     if (!searchRes.ok) {
       const body = await searchRes.text()
       console.error("[Jira] Search failed", searchRes.status, body)
-      return { activities: [], updatedTokenCookie: updatedCookie }
+      return { activities: [], updatedTokenCookie: updatedTokenCookieValue }
     }
 
     const searchData = await searchRes.json()
@@ -143,8 +145,8 @@ export async function getJiraActivitiesForDate(
       const issueKey = issue.key
       const issueSummary = issue.fields?.summary || ""
       const projectName = issue.fields?.project?.name || ""
-      const issueUrl = token.siteUrl
-        ? `${token.siteUrl}/browse/${issueKey}`
+      const issueUrl = cookieData.siteUrl
+        ? `${cookieData.siteUrl}/browse/${issueKey}`
         : undefined
 
       // Status transitions from changelog
@@ -192,9 +194,9 @@ export async function getJiraActivitiesForDate(
     }
 
     console.log(`[Jira] ${activities.length} activities for ${date}`)
-    return { activities, updatedTokenCookie: updatedCookie }
+    return { activities, updatedTokenCookie: updatedTokenCookieValue }
   } catch (error) {
     console.error("[Jira] Error fetching activities", error)
-    return { activities: [], updatedTokenCookie: updatedCookie }
+    return { activities: [], updatedTokenCookie: updatedTokenCookieValue }
   }
 }
