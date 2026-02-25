@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { X, Sparkles, Loader2, Send, RefreshCw, Undo2, CheckCheck, Lock } from "lucide-react"
+import { X, Sparkles, Loader2, Send, RefreshCw, Undo2, CheckCheck, Lock, ChevronDown, ChevronRight, Clock } from "lucide-react"
 import { TimeLogSuggestion, AiSuggestionResponse } from "@/app/lib/types/timelog"
 import { PmContext } from "@/app/lib/types/pm"
 import { useTranslation } from "@/app/lib/i18n"
@@ -68,7 +68,10 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
   const [error, setError] = useState<string | null>(null)
   const [submitResults, setSubmitResults] = useState<Record<string, { success: boolean; error?: string }>>({})
   const [recentlyRejected, setRecentlyRejected] = useState<{ suggestion: TimeLogSuggestion; index: number } | null>(null)
+  const [existingExpanded, setExistingExpanded] = useState(false)
 
+  const existingRecords = pmContext?.existingRecords || []
+  const existingHours = existingRecords.reduce((sum, r) => sum + r.hours, 0)
   const approvedSuggestions = suggestions.filter((s) => s.status === "approved" || s.status === "edited")
   const pendingSuggestions = suggestions.filter((s) => s.status === "pending")
   const visibleSuggestions = suggestions.filter((s) => s.status !== "skipped")
@@ -89,6 +92,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       setState(cached.state)
       setError(null)
       setExpandedId(null)
+      setExistingExpanded(false)
     } else {
       // Reset when switching to an uncached date
       setSuggestions([])
@@ -97,6 +101,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       setState("ready")
       setError(null)
       setExpandedId(null)
+      setExistingExpanded(false)
     }
   }, [date])
 
@@ -362,7 +367,35 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
             <SuggestionProgress
               approvedHours={approvedHours}
               totalHours={totalHours}
+              existingHours={existingHours}
             />
+
+            {existingRecords.length > 0 && (
+              <div className="rounded-md border bg-muted/30">
+                <button
+                  onClick={() => setExistingExpanded((prev) => !prev)}
+                  className="flex items-center justify-between w-full px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>{t("existing.title")} ({existingHours.toFixed(1)}{t("progress.hoursUnit")})</span>
+                  </div>
+                  {existingExpanded ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                </button>
+                {existingExpanded && (
+                  <div className="px-3 pb-2 space-y-1">
+                    {existingRecords.map((r, i) => (
+                      <div key={i} className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span className="truncate mr-2">
+                          {r.projectName}{r.activityTypeName ? ` · ${r.activityTypeName}` : ""}
+                        </span>
+                        <span className="tabular-nums shrink-0">{r.hours.toFixed(1)}{t("progress.hoursUnit")}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="space-y-2">
               {visibleSuggestions.map((suggestion) => (

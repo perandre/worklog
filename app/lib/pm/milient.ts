@@ -1,5 +1,5 @@
 import { PmAdapter } from "./adapter"
-import { PmProject, PmActivityType, PmAllocation } from "../types/pm"
+import { PmProject, PmActivityType, PmAllocation, PmTimeRecord } from "../types/pm"
 import { TimeLogSubmission } from "../types/timelog"
 import { milientFetch, milientList, milientListAll, cachedFetch, resolveUserAccountId } from "../milient"
 
@@ -7,6 +7,7 @@ export class MilientPmAdapter implements PmAdapter {
   name = "milient"
   private userEmail: string
   private userAccountIdPromise: Promise<string> | null = null
+  private timeRecordsCache = new Map<string, Promise<any[]>>()
 
   constructor(userEmail: string) {
     this.userEmail = userEmail
@@ -88,16 +89,24 @@ export class MilientPmAdapter implements PmAdapter {
     })
   }
 
+  private fetchTimeRecords(date: string): Promise<any[]> {
+    const cached = this.timeRecordsCache.get(date)
+    if (cached) return cached
+    const promise = this.getUserAccountId().then((userId) =>
+      milientList<any>("timeRecords", {
+        params: {
+          userAccountId: userId,
+          fromDate: date,
+          toDate: date,
+        },
+      })
+    )
+    this.timeRecordsCache.set(date, promise)
+    return promise
+  }
+
   async getAllocations(date: string): Promise<PmAllocation[]> {
-    // Fetch existing time records for the day (replaces non-existent /allocations)
-    const userId = await this.getUserAccountId()
-    const data = await milientList<any>("timeRecords", {
-      params: {
-        userAccountId: userId,
-        fromDate: date,
-        toDate: date,
-      },
-    })
+    const data = await this.fetchTimeRecords(date)
 
     // Group by project and sum minutes
     const byProject = new Map<string, { projectName: string; minutes: number }>()
@@ -118,6 +127,18 @@ export class MilientPmAdapter implements PmAdapter {
       projectId,
       projectName,
       allocatedHours: minutes / 60,
+    }))
+  }
+
+  async getExistingRecords(date: string): Promise<PmTimeRecord[]> {
+    const data = await this.fetchTimeRecords(date)
+
+    return data.map((r: any) => ({
+      projectId: String(r.projectId),
+      projectName: r.projectName || `Project ${r.projectId}`,
+      activityTypeName: r.projectExtensionName || "",
+      hours: (r.minutes || 0) / 60,
+      description: r.description || "",
     }))
   }
 

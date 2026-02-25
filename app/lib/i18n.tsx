@@ -74,6 +74,11 @@ const translations = {
 
   // Progress
   "progress.hoursUnit": { en: "h", no: "t" },
+  "progress.logged": { en: "logged", no: "logget" },
+  "progress.new": { en: "new", no: "ny" },
+
+  // Existing records
+  "existing.title": { en: "Already logged", no: "Allerede ført" },
 } as const
 
 type TranslationKey = keyof typeof translations
