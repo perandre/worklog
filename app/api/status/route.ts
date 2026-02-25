@@ -4,6 +4,7 @@ import { auth } from "@/app/lib/auth"
 import { isConfigured as isSlackConfigured } from "@/app/lib/slack"
 import { isConfigured as isTrelloConfigured } from "@/app/lib/trello"
 import { isConfigured as isGitHubConfigured } from "@/app/lib/github"
+import { isConfigured as isJiraConfigured } from "@/app/lib/jira"
 
 export async function GET() {
   const session = await auth()
@@ -14,11 +15,13 @@ export async function GET() {
   const slackToken = cookieStore.get("slack_token")?.value
   const trelloToken = cookieStore.get("trello_token")?.value
   const githubToken = cookieStore.get("github_token")?.value
+  const jiraToken = cookieStore.get("jira_token")?.value
 
   return NextResponse.json({
     google: !!session?.accessToken,
     slack: isSlackConfigured(slackToken),
     trello: isTrelloConfigured({ token: trelloToken }),
     github: isGitHubConfigured(githubToken),
+    jira: isJiraConfigured(jiraToken),
   })
 }
