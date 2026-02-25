@@ -35,25 +35,28 @@ export class MilientPmAdapter implements PmAdapter {
     })
   }
 
-  // Get project IDs the user has logged time to in the last N days (cached)
-  private async getRecentlyUsedProjectIds(days = 14): Promise<Set<string>> {
+  // Get recently used project and activity type IDs from the last N days (cached)
+  private async getRecentUsage(days = 14): Promise<{ projectIds: Set<string>; activityTypeIds: Set<string> }> {
     const userId = await this.getUserAccountId()
-    return cachedFetch(`recentProjects:${userId}:${days}`, async () => {
+    return cachedFetch(`recentUsage:${userId}:${days}`, async () => {
       const toDate = new Date().toISOString().split("T")[0]
       const fromDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
       const records = await milientListAll<any>("timeRecords", {
         params: { userAccountId: userId, fromDate, toDate },
       })
-      return new Set(records.map((r: any) => String(r.projectId)))
+      return {
+        projectIds: new Set(records.map((r: any) => String(r.projectId))),
+        activityTypeIds: new Set(records.map((r: any) => String(r.projectExtensionId)).filter(Boolean)),
+      }
     })
   }
 
   async getProjects(): Promise<PmProject[]> {
     return cachedFetch(`projects:${this.userEmail}`, async () => {
-      const [allProjects, userProjectIds, recentProjectIds] = await Promise.all([
+      const [allProjects, userProjectIds, { projectIds: recentProjectIds }] = await Promise.all([
         cachedFetch("projects:all", () => milientListAll<any>("projects", { includes: "base" })),
         this.getUserProjectIds(),
-        this.getRecentlyUsedProjectIds(),
+        this.getRecentUsage(),
       ])
 
       const filtered = allProjects.filter((p: any) =>
@@ -87,9 +90,9 @@ export class MilientPmAdapter implements PmAdapter {
       })
     }
 
-    const [userProjectIds, recentProjectIds] = await Promise.all([
+    const [userProjectIds, { activityTypeIds: recentActivityTypeIds }] = await Promise.all([
       this.getUserProjectIds(),
-      this.getRecentlyUsedProjectIds(),
+      this.getRecentUsage(),
     ])
 
     return cachedFetch(`activities:user:${this.userEmail}`, async () => {
@@ -99,10 +102,10 @@ export class MilientPmAdapter implements PmAdapter {
 
       const filtered = allExtensions.filter((a: any) =>
         userProjectIds.has(a.projectId) &&
-        recentProjectIds.has(String(a.projectId)) &&
+        recentActivityTypeIds.has(String(a.id)) &&
         a.projectExtensionState !== "closed"
       )
-      console.log(`[PM] getActivityTypes: ${allExtensions.length} total → ${filtered.length} after filtering (member + recent + not closed)`)
+      console.log(`[PM] getActivityTypes: ${allExtensions.length} total → ${filtered.length} after filtering (recently used + not closed)`)
       return filtered.map((a: any) => ({
         id: String(a.id),
         name: a.name,
