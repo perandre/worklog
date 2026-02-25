@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { X, Sparkles, Loader2, Send, RefreshCw, Undo2, CheckCheck, Lock, ChevronDown, ChevronRight, Clock } from "lucide-react"
 import { TimeLogSuggestion, AiSuggestionResponse } from "@/app/lib/types/timelog"
 import { PmContext } from "@/app/lib/types/pm"
+import { preprocessActivities } from "@/app/lib/ai/preprocess"
 import { useTranslation } from "@/app/lib/i18n"
 import SuggestionCard from "./SuggestionCard"
 import SuggestionProgress from "./SuggestionProgress"
@@ -159,14 +160,12 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       setLoadingStep(t("ai.loading.analyzing"))
       await new Promise((r) => setTimeout(r, 400))
 
-      const activityCount = hours
-        ? Object.values(hours).reduce((sum: number, h: any) => sum + (h.primaries?.length || 0) + (h.communications?.length || 0), 0)
-        : 0
-      setLoadingStep(`${t("ai.loading.generating")} (${activityCount} ${lang === "no" ? "aktiviteter" : "activities"}, ${ctx.projects.length} ${lang === "no" ? "prosjekter" : "projects"})`)
+      const preprocessed = preprocessActivities(hours || {})
+      setLoadingStep(`${t("ai.loading.generating")} (${preprocessed.activities.length} ${lang === "no" ? "aktiviteter" : "activities"}, ${ctx.projects.length} ${lang === "no" ? "prosjekter" : "projects"})`)
       const sugRes = await fetch("/api/ai/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date, hours, pmContext: ctx }),
+        body: JSON.stringify({ date, preprocessed, pmContext: ctx }),
       })
       if (!sugRes.ok) {
         const errData = await sugRes.json().catch(() => null)

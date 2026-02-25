@@ -1,4 +1,4 @@
-type RawActivity = {
+export type RawActivity = {
   source: string
   type?: string
   title?: string

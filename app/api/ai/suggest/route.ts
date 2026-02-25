@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/app/lib/auth"
 import { getAiAdapter } from "@/app/lib/ai"
-import { preprocessActivities } from "@/app/lib/ai/preprocess"
+import { PreprocessedData } from "@/app/lib/ai/preprocess"
 import { assemblePrompt } from "@/app/lib/ai/prompt"
 import { parseSuggestions } from "@/app/lib/ai/parse"
 import { PmContext } from "@/app/lib/types/pm"
@@ -15,17 +15,16 @@ export async function POST(request: NextRequest) {
   try {
     const t0 = Date.now()
     const body = await request.json()
-    const { date, hours, pmContext } = body as {
+    const { date, preprocessed, pmContext } = body as {
       date: string
-      hours: Record<string, any>
+      preprocessed: PreprocessedData
       pmContext: PmContext
     }
 
-    if (!date || !hours || !pmContext) {
-      return NextResponse.json({ error: "Missing required fields: date, hours, pmContext" }, { status: 400 })
+    if (!date || !preprocessed || !pmContext) {
+      return NextResponse.json({ error: "Missing required fields: date, preprocessed, pmContext" }, { status: 400 })
     }
 
-    const preprocessed = preprocessActivities(hours)
     const adapter = getAiAdapter()
     const prompt = assemblePrompt(preprocessed, pmContext, date)
     console.log(`[AI] ${preprocessed.activities.length} activities, ${pmContext.projects.length} projects, ${pmContext.activityTypes.length} activity types → ${prompt.length} chars`)
