@@ -24,7 +24,6 @@ export function parseSuggestions(jsonString: string): TimeLogSuggestion[] {
     activityTypeName: String(item.activityTypeName || "Ukjent type"),
     hours: roundToHalf(Number(item.hours) || 0.5),
     description: String(item.description || ""),
-    descriptionEn: String(item.descriptionEn || item.description || ""),
     internalNote: String(item.internalNote || ""),
     reasoning: String(item.reasoning || ""),
     confidence: validateConfidence(item.confidence),

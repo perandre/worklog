@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Check, X, ChevronDown, ChevronUp, Languages } from "lucide-react"
+import { Check, X, ChevronDown, ChevronUp } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n"
 import { TimeLogSuggestion } from "@/app/lib/types/timelog"
@@ -50,8 +50,7 @@ export default function SuggestionCard({
   activityTypes,
 }: SuggestionCardProps) {
   const [hoursInput, setHoursInput] = useState(formatHM(suggestion.hours))
-  const { lang, t } = useTranslation()
-  const [descLang, setDescLang] = useState<"no" | "en">(lang)
+  const { t } = useTranslation()
 
   const isApproved = suggestion.status === "approved"
   const isSkipped = suggestion.status === "skipped"
@@ -98,8 +97,6 @@ export default function SuggestionCard({
   }
 
   // Expanded view
-  const descValue = descLang === "en" ? suggestion.descriptionEn : suggestion.description
-
   return (
     <Card className="border-primary/50 shadow-sm">
       <CardContent className="p-4 space-y-3">
@@ -170,34 +167,14 @@ export default function SuggestionCard({
           </div>
         </div>
 
-        {/* Description with language toggle */}
+        {/* Description */}
         <div className="space-y-1">
-          <div className="flex items-center justify-between">
-            <label className="text-xs text-muted-foreground">{t("card.description")}</label>
-            <button
-              type="button"
-              onClick={() => setDescLang((prev) => (prev === "no" ? "en" : "no"))}
-              className={cn(
-                "flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium transition-colors",
-                "border hover:bg-accent",
-                descLang !== lang && "bg-accent"
-              )}
-            >
-              <Languages className="h-3 w-3" />
-              {descLang === "no" ? "EN" : "NO"}
-            </button>
-          </div>
+          <label className="text-xs text-muted-foreground">{t("card.description")}</label>
           <textarea
             className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
-            rows={Math.max(3, (descValue || "").split("\n").length + 1)}
-            value={descValue}
-            onChange={(e) => {
-              if (descLang === "en") {
-                onUpdate({ descriptionEn: e.target.value })
-              } else {
-                onUpdate({ description: e.target.value })
-              }
-            }}
+            rows={Math.max(3, (suggestion.description || "").split("\n").length + 1)}
+            value={suggestion.description}
+            onChange={(e) => onUpdate({ description: e.target.value })}
           />
         </div>
 

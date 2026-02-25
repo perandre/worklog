@@ -14,14 +14,13 @@ DESCRIPTION RULES (important — descriptions appear on invoices!):
 - Use one line per distinct aspect of work, separated by newlines (\n).
 - Be specific: mention features built, issues resolved, outcomes of meetings, etc.
 - Frame work in terms of delivery and progress, not just "attended meeting" or "wrote code".
-- Generate BOTH Norwegian ("description") and English ("descriptionEn") versions.
+- Write in English.
 
 Good example:
-  "description": "Implementert ny AI-basert søkefunksjon for rapportmodulen\nOptimalisert databasespørringer for raskere lasting\nRettet feil i brukerautentisering ved pålogging"
-  "descriptionEn": "Implemented new AI-based search feature for the reports module\nOptimized database queries for faster loading\nFixed authentication bug on login"
+  "description": "Implemented new AI-based search feature for the reports module\nOptimized database queries for faster loading\nFixed authentication bug on login"
 
 Bad example:
-  "description": "Diverse utviklingsarbeid"
+  "description": "Various development work"
 
 RULES:
 - Norwegian workday is 7.5 hours
@@ -40,8 +39,7 @@ SCHEMA (return JSON array):
     "activityTypeId": "string",
     "activityTypeName": "string",
     "hours": number,
-    "description": "Norwegian description for invoices, one line per aspect, newline-separated",
-    "descriptionEn": "English translation of description",
+    "description": "English description for invoices, one line per aspect, newline-separated",
     "internalNote": "",
     "reasoning": "Why this mapping was chosen",
     "confidence": "high" | "medium" | "low",

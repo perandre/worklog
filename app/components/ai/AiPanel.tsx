@@ -274,7 +274,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
         activityTypeId: s.activityTypeId,
         date,
         hours: s.hours,
-        description: lang === "en" ? s.descriptionEn : s.description,
+        description: s.description,
         internalNote: s.internalNote,
       }))
 
