@@ -99,6 +99,11 @@ export class MilientPmAdapter implements PmAdapter {
           fromDate: date,
           toDate: date,
         },
+      }).then((records) => {
+        // API may return records outside the requested range — filter client-side
+        const filtered = records.filter((r: any) => r.timeRecordDate === date)
+        console.log(`[PM] fetchTimeRecords(${date}): ${records.length} raw → ${filtered.length} filtered (dates in response: ${Array.from(new Set(records.map((r: any) => r.timeRecordDate))).join(", ")})`)
+        return filtered
       })
     )
     this.timeRecordsCache.set(date, promise)
