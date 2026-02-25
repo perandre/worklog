@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Mail, MessageSquare, FileText, Copy, Check, Trello, Github } from "lucide-react"
+import { Calendar, Mail, MessageSquare, FileText, Copy, Check, Trello, Github, Ticket } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n"
 
@@ -30,6 +30,7 @@ const sourceConfig = {
   docs: { icon: FileText, color: "bg-docs text-white" },
   trello: { icon: Trello, color: "bg-trello text-white" },
   github: { icon: Github, color: "bg-github text-white" },
+  jira: { icon: Ticket, color: "bg-jira text-white" },
 } as const
 
 type Source = keyof typeof sourceConfig
@@ -96,6 +97,13 @@ export default function Activity({ activity, compact = false, isHighlighted = fa
   } else if (activity.source === "github") {
     title = activity.repoName || "GitHub"
     meta = truncateText(activity.title, compact ? 30 : 60)
+  } else if (activity.source === "jira") {
+    title = truncateText(`${activity.issueKey}: ${activity.issueSummary}`, compact ? 25 : 40)
+    if (activity.type === "issue_transitioned") {
+      meta = activity.detail || t("activity.moved")
+    } else if (activity.type === "issue_commented") {
+      meta = truncateText(activity.detail ? `${t("activity.commented")}: ${activity.detail}` : t("activity.commented"), compact ? 30 : 60)
+    }
   }
 
   const copyDuration = () => {
