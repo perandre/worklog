@@ -159,7 +159,10 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       setLoadingStep(t("ai.loading.analyzing"))
       await new Promise((r) => setTimeout(r, 400))
 
-      setLoadingStep(t("ai.loading.generating"))
+      const activityCount = hours
+        ? Object.values(hours).reduce((sum: number, h: any) => sum + (h.primaries?.length || 0) + (h.communications?.length || 0), 0)
+        : 0
+      setLoadingStep(`${t("ai.loading.generating")} (${activityCount} ${lang === "no" ? "aktiviteter" : "activities"}, ${ctx.projects.length} ${lang === "no" ? "prosjekter" : "projects"})`)
       const sugRes = await fetch("/api/ai/suggest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
