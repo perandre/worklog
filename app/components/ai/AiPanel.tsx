@@ -103,7 +103,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       setExpandedId(null)
       setExistingExpanded(false)
       // Eagerly fetch pmContext so existing records show before generating
-      fetch("/api/ai/pm-context")
+      fetch(`/api/ai/pm-context?date=${date}`)
         .then((r) => r.ok ? r.json() : null)
         .then((ctx) => { if (ctx) setPmContext(ctx) })
         .catch(() => {})
@@ -151,7 +151,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
 
     try {
       setLoadingStep(t("ai.loading.projects"))
-      const ctxRes = await fetch("/api/ai/pm-context")
+      const ctxRes = await fetch(`/api/ai/pm-context?date=${date}`)
       if (!ctxRes.ok) throw new Error(t("ai.error.projects"))
       const ctx: PmContext = await ctxRes.json()
       setPmContext(ctx)
