@@ -35,57 +35,75 @@ export class MilientPmAdapter implements PmAdapter {
     })
   }
 
+  // Get project IDs the user has logged time to in the last N days (cached)
+  private async getRecentProjectIds(days = 90): Promise<Set<string>> {
+    const userId = await this.getUserAccountId()
+    return cachedFetch(`recentProjects:${userId}:${days}`, async () => {
+      const toDate = new Date().toISOString().split("T")[0]
+      const fromDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+      const records = await milientListAll<any>("timeRecords", {
+        params: { userAccountId: userId, fromDate, toDate },
+      })
+      return new Set(records.map((r: any) => String(r.projectId)))
+    })
+  }
+
   async getProjects(): Promise<PmProject[]> {
-    const userProjectIds = await this.getUserProjectIds()
-
     return cachedFetch(`projects:${this.userEmail}`, async () => {
-      // Fetch all projects (cached globally) and filter to user's memberships
-      const allProjects = await cachedFetch("projects:all", () =>
-        milientListAll<any>("projects", { includes: "base" })
-      )
+      const [allProjects, userProjectIds, recentProjectIds] = await Promise.all([
+        cachedFetch("projects:all", () => milientListAll<any>("projects", { includes: "base" })),
+        this.getUserProjectIds(),
+        this.getRecentProjectIds(),
+      ])
 
-      return allProjects
-        .filter((p: any) => userProjectIds.has(p.id))
-        .map((p: any) => ({
-          id: String(p.id),
-          name: p.name,
-          code: p.projectNumber || undefined,
-        }))
+      const filtered = allProjects.filter((p: any) =>
+        userProjectIds.has(p.id) &&
+        p.projectState === "inProgress" &&
+        recentProjectIds.has(String(p.id))
+      )
+      console.log(`[PM] getProjects: ${allProjects.length} total → ${filtered.length} after filtering (inProgress + member + recent)`)
+      return filtered.map((p: any) => ({
+        id: String(p.id),
+        name: p.name,
+        code: p.projectNumber || undefined,
+      }))
     })
   }
 
   async getActivityTypes(projectId?: string): Promise<PmActivityType[]> {
     if (projectId) {
-      // Fetch activity types for a specific project
       return cachedFetch(`activities:${projectId}`, async () => {
         const data = await milientListAll<any>("projectExtensions", {
           includes: "base",
           params: { projectId },
         })
-        return data.map((a: any) => ({
-          id: String(a.id),
-          name: a.name,
-          projectId: String(a.projectId),
-        }))
+        return data
+          .filter((a: any) => a.projectExtensionState !== "closed")
+          .map((a: any) => ({
+            id: String(a.id),
+            name: a.name,
+            projectId: String(a.projectId),
+          }))
       })
     }
 
-    // Fetch activity types for all of the user's projects
     const userProjectIds = await this.getUserProjectIds()
 
     return cachedFetch(`activities:user:${this.userEmail}`, async () => {
-      // Fetch all extensions (cached) and filter to user's projects
       const allExtensions = await cachedFetch("activities:all", () =>
         milientListAll<any>("projectExtensions", { includes: "base" })
       )
 
-      return allExtensions
-        .filter((a: any) => userProjectIds.has(a.projectId))
-        .map((a: any) => ({
-          id: String(a.id),
-          name: a.name,
-          projectId: String(a.projectId),
-        }))
+      const filtered = allExtensions.filter((a: any) =>
+        userProjectIds.has(a.projectId) &&
+        a.projectExtensionState !== "closed"
+      )
+      console.log(`[PM] getActivityTypes: ${allExtensions.length} total → ${filtered.length} after filtering (member + not closed)`)
+      return filtered.map((a: any) => ({
+        id: String(a.id),
+        name: a.name,
+        projectId: String(a.projectId),
+      }))
     })
   }
 
