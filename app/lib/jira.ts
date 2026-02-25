@@ -119,14 +119,21 @@ export async function getJiraActivitiesForDate(
     const nextDateStr = nextDate.toISOString().split("T")[0]
 
     const jql = `updated >= "${date}" AND updated < "${nextDateStr}" ORDER BY updated DESC`
-    const searchUrl = new URL(`https://api.atlassian.com/ex/jira/${cookieData.cloudId}/rest/api/3/search`)
-    searchUrl.searchParams.set("jql", jql)
-    searchUrl.searchParams.set("expand", "changelog")
-    searchUrl.searchParams.set("fields", "summary,project,comment")
-    searchUrl.searchParams.set("maxResults", "100")
+    const searchUrl = `https://api.atlassian.com/ex/jira/${cookieData.cloudId}/rest/api/3/search/jql`
 
-    const searchRes = await fetch(searchUrl.toString(), {
-      headers: { Authorization: `Bearer ${accessToken}`, Accept: "application/json" },
+    const searchRes = await fetch(searchUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        jql,
+        expand: ["changelog"],
+        fields: ["summary", "project", "comment"],
+        maxResults: 100,
+      }),
     })
     if (!searchRes.ok) {
       const body = await searchRes.text()
