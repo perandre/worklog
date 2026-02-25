@@ -5,6 +5,7 @@ import { getCalendarEvents, getEmails, getDocActivity } from "@/app/lib/google"
 import { getMessages } from "@/app/lib/slack"
 import { getTrelloActivitiesForDate } from "@/app/lib/trello"
 import { getGitHubActivitiesForDate } from "@/app/lib/github"
+import { getJiraActivitiesForDate } from "@/app/lib/jira"
 import { processActivities, getDaySummary } from "@/app/lib/aggregator"
 
 export async function GET(request: NextRequest) {
@@ -13,6 +14,7 @@ export async function GET(request: NextRequest) {
   const slackToken = cookieStore.get("slack_token")?.value
   const trelloToken = cookieStore.get("trello_token")?.value
   const githubToken = cookieStore.get("github_token")?.value
+  const jiraTokenJson = cookieStore.get("jira_token")?.value
 
   if (!session?.accessToken) {
     return NextResponse.json(
@@ -47,7 +49,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [calendarEvents, emails, docActivity, slackMessages, trelloActivities, githubActivities] = await Promise.all([
+    const [calendarEvents, emails, docActivity, slackMessages, trelloActivities, githubActivities, jiraResult] = await Promise.all([
       getCalendarEvents(session.accessToken, date).catch((err) => {
         console.error("Calendar fetch error:", err.message)
         return []
@@ -73,13 +75,18 @@ export async function GET(request: NextRequest) {
         console.error("GitHub fetch error:", err?.message || err)
         return []
       }),
+      getJiraActivitiesForDate(date, jiraTokenJson).catch((err) => {
+        console.error("Jira fetch error:", err?.message || err)
+        return { activities: [], updatedTokenJson: null }
+      }),
     ])
 
-    const allActivities = [...calendarEvents, ...emails, ...docActivity, ...slackMessages, ...trelloActivities, ...githubActivities]
+    const jiraActivities = jiraResult.activities || []
+    const allActivities = [...calendarEvents, ...emails, ...docActivity, ...slackMessages, ...trelloActivities, ...githubActivities, ...jiraActivities]
     const hours = processActivities(allActivities, 6, 23, timezone)
     const summary = getDaySummary(hours)
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       date,
       hours,
       summary,
@@ -90,8 +97,22 @@ export async function GET(request: NextRequest) {
         slack: slackMessages.length,
         trello: trelloActivities.length,
         github: githubActivities.length,
+        jira: jiraActivities.length,
       },
     })
+
+    // If Jira token was refreshed, update the cookie on the response
+    if (jiraResult.updatedTokenJson) {
+      response.cookies.set("jira_token", jiraResult.updatedTokenJson, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 365,
+        path: "/",
+      })
+    }
+
+    return response
   } catch (error: any) {
     console.error("Error fetching activities:", error)
     return NextResponse.json(
