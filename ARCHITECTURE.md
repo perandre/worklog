@@ -2,7 +2,7 @@
 
 ## Overview
 
-Worklog — a summary of your day. Shows hour-by-hour activity from Google (Calendar, Gmail, Docs), Slack, Trello, and GitHub. AI-powered time logging via Gemini + Milient/Moment integration.
+Worklog — a summary of your day. Shows hour-by-hour activity from Google (Calendar, Gmail, Docs), Slack, Trello, GitHub, and Jira Cloud. AI-powered time logging via Gemini + Milient/Moment integration.
 
 ## Tech Stack
 
@@ -12,7 +12,7 @@ Worklog — a summary of your day. Shows hour-by-hour activity from Google (Cale
 - **Icons**: Lucide React
 - **AI**: Google Gemini 2.5 Flash
 - **PM**: Milient/Moment (time management)
-- **APIs**: Google (Gmail, Calendar, Drive Activity v2, Drive v3), Slack, Trello, GitHub
+- **APIs**: Google (Gmail, Calendar, Drive Activity v2, Drive v3), Slack, Trello, GitHub, Jira Cloud
 - **Hosting**: Vercel
 
 ## Project Structure
@@ -24,7 +24,8 @@ app/
 │   │   ├── [...nextauth]/route.ts    # NextAuth handler
 │   │   ├── slack/                     # Slack OAuth (connect/callback/disconnect)
 │   │   ├── trello/                    # Trello OAuth
-│   │   └── github/                    # GitHub OAuth
+│   │   ├── github/                    # GitHub OAuth
+│   │   └── jira/                      # Jira Cloud OAuth 2.0 (3LO)
 │   ├── activities/route.ts            # GET /api/activities?date=YYYY-MM-DD
 │   ├── status/route.ts                # GET /api/status (auth required)
 │   └── ai/
@@ -43,6 +44,7 @@ app/
 │   ├── slack.ts                       # Slack search API + user resolution
 │   ├── trello.ts                      # Trello board/card activity
 │   ├── github.ts                      # GitHub commits + events
+│   ├── jira.ts                        # Jira Cloud issue transitions + comments
 │   ├── aggregator.ts                  # Hour bucketing logic
 │   ├── milient.ts                     # Milient API client + cache
 │   ├── i18n.tsx                       # Translations (NO/EN)
@@ -74,7 +76,7 @@ prompts/timelog-system.md              # Editable AI system prompt
 
 ### Activity Feed
 1. `page.tsx` fetches `/api/activities?date=YYYY-MM-DD`
-2. API route gets Google token from session, Slack/Trello/GitHub tokens from cookies
+2. API route gets Google token from session, Slack/Trello/GitHub/Jira tokens from cookies
 3. Calls all source APIs in parallel
 4. `aggregator.ts` buckets activities by hour (6-23)
 5. Returns `{ hours, summary, sources }`
@@ -94,6 +96,12 @@ prompts/timelog-system.md              # Editable AI system prompt
 ### Slack / Trello / GitHub (custom OAuth)
 - Each stores user token in HTTP-only cookie
 - Auth required on all API routes and disconnect endpoints
+
+### Jira Cloud (OAuth 2.0 3LO)
+- Scopes: `read:jira-work`, `read:jira-user`, `offline_access`
+- Access tokens expire after 1 hour; refresh token stored in base64-encoded HTTP-only cookie
+- Fresh access token obtained via refresh on each API call (access token JWT too large for cookies)
+- Cookie stores: `{ refreshToken, cloudId, siteUrl }` only
 
 ## Caching
 

@@ -7,6 +7,7 @@
 - Communications: Max 6/hour (day view), 3/hour (week view)
 - Slack DMs: No `#` prefix; channels get `#` prefix
 - Docs: Shows edit/create/delete/rename/move actions
+- Jira: Shows issue transitions (status changes) and comments; displays `issueKey: summary`
 - Duration: Click to copy (shows checkmark feedback)
 
 ## AI Time Logging

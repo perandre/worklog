@@ -38,6 +38,7 @@ Use `const { t, lang } = useTranslation()` in components. The version string is 
 - Gmail: `#EA4335` (red)
 - Calendar: `#4285F4` (blue)
 - Docs: `#34A853` (green)
+- Jira: `#0052CC` (blue)
 
 ## Responsive Layout
 
