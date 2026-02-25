@@ -1,5 +1,5 @@
 type Activity = {
-  source: "calendar" | "gmail" | "slack" | "docs" | "trello" | "github"
+  source: "calendar" | "gmail" | "slack" | "docs" | "trello" | "github" | "jira"
   type: string
   timestamp: Date
   endTime?: Date
@@ -90,6 +90,7 @@ function mergeHourActivities(hourActivities: Activity[]): HourData {
   const docs = hourActivities.filter((a) => a.source === "docs")
   const trello = hourActivities.filter((a) => a.source === "trello")
   const github = hourActivities.filter((a) => a.source === "github")
+  const jira = hourActivities.filter((a) => a.source === "jira")
 
   const primaries = calendar
 
@@ -97,7 +98,7 @@ function mergeHourActivities(hourActivities: Activity[]): HourData {
     gmail.filter((email) => !isCalendarEmail(email))
   )
 
-  const communications = [...slack, ...filteredEmails, ...docs, ...trello, ...github].sort(
+  const communications = [...slack, ...filteredEmails, ...docs, ...trello, ...github, ...jira].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   )
 
@@ -122,6 +123,7 @@ export function getDaySummary(hourlyData: Record<number, HourData>) {
   let totalDocEdits = 0
   let totalTrelloActivities = 0
   let totalGitHubActivities = 0
+  let totalJiraActivities = 0
 
   for (const hourData of Object.values(hourlyData)) {
     totalMeetings += (hourData.primaries || []).filter((p: any) => !p.isSpanning).length
@@ -130,6 +132,7 @@ export function getDaySummary(hourlyData: Record<number, HourData>) {
     totalDocEdits += hourData.communications.filter((c) => c.source === "docs").length
     totalTrelloActivities += hourData.communications.filter((c) => c.source === "trello").length
     totalGitHubActivities += hourData.communications.filter((c) => c.source === "github").length
+    totalJiraActivities += hourData.communications.filter((c) => c.source === "jira").length
   }
 
   return {
@@ -139,5 +142,6 @@ export function getDaySummary(hourlyData: Record<number, HourData>) {
     totalDocEdits,
     totalTrelloActivities,
     totalGitHubActivities,
+    totalJiraActivities,
   }
 }
