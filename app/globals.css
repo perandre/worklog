@@ -8,6 +8,7 @@
   --color-docs: #34A853;
   --color-trello: #026AA7;
   --color-github: #333;
+  --color-jira: #0052CC;
 }
 
 @layer utilities {
@@ -28,6 +29,9 @@
   }
   .bg-github {
     background-color: var(--color-github);
+  }
+  .bg-jira {
+    background-color: var(--color-jira);
   }
 }
 
