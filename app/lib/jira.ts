@@ -17,10 +17,18 @@ export type JiraActivity = {
   url?: string
 }
 
-export function isConfigured(tokenJson?: string): boolean {
-  if (!tokenJson) return false
+function decodeCookie(encoded: string): string {
+  return Buffer.from(encoded, "base64").toString("utf-8")
+}
+
+export function encodeCookie(json: string): string {
+  return Buffer.from(json).toString("base64")
+}
+
+export function isConfigured(tokenCookie?: string): boolean {
+  if (!tokenCookie) return false
   try {
-    const data = JSON.parse(tokenJson) as Partial<JiraTokenData>
+    const data = JSON.parse(decodeCookie(tokenCookie)) as Partial<JiraTokenData>
     return !!(data.accessToken && data.refreshToken && data.cloudId)
   } catch {
     return false
@@ -28,13 +36,13 @@ export function isConfigured(tokenJson?: string): boolean {
 }
 
 export async function ensureFreshToken(
-  tokenJson: string
-): Promise<{ token: JiraTokenData; updatedJson: string | null }> {
-  const token = JSON.parse(tokenJson) as JiraTokenData
+  tokenCookie: string
+): Promise<{ token: JiraTokenData; updatedCookie: string | null }> {
+  const token = JSON.parse(decodeCookie(tokenCookie)) as JiraTokenData
 
   // If token doesn't expire within 60s, return as-is
   if (token.expiresAt && Date.now() < token.expiresAt - 60_000) {
-    return { token, updatedJson: null }
+    return { token, updatedCookie: null }
   }
 
   console.log("[Jira] Token expired or expiring soon, refreshing...")
@@ -64,9 +72,9 @@ export async function ensureFreshToken(
     expiresAt: Date.now() + data.expires_in * 1000,
   }
 
-  const updatedJson = JSON.stringify(updatedToken)
+  const updatedCookie = encodeCookie(JSON.stringify(updatedToken))
   console.log("[Jira] Token refreshed successfully")
-  return { token: updatedToken, updatedJson }
+  return { token: updatedToken, updatedCookie }
 }
 
 function extractTextFromAdf(node: any): string {
@@ -81,13 +89,13 @@ function extractTextFromAdf(node: any): string {
 
 export async function getJiraActivitiesForDate(
   date: string,
-  tokenJson?: string
-): Promise<{ activities: JiraActivity[]; updatedTokenJson: string | null }> {
-  if (!tokenJson || !isConfigured(tokenJson)) {
-    return { activities: [], updatedTokenJson: null }
+  tokenCookie?: string
+): Promise<{ activities: JiraActivity[]; updatedTokenCookie: string | null }> {
+  if (!tokenCookie || !isConfigured(tokenCookie)) {
+    return { activities: [], updatedTokenCookie: null }
   }
 
-  const { token, updatedJson } = await ensureFreshToken(tokenJson)
+  const { token, updatedCookie } = await ensureFreshToken(tokenCookie)
 
   try {
     // Get current user's accountId
@@ -96,7 +104,7 @@ export async function getJiraActivitiesForDate(
     })
     if (!meRes.ok) {
       console.error("[Jira] Failed to fetch /me", meRes.status)
-      return { activities: [], updatedTokenJson: updatedJson }
+      return { activities: [], updatedTokenCookie: updatedCookie }
     }
     const me = await meRes.json()
     const accountId = me.account_id
@@ -120,7 +128,7 @@ export async function getJiraActivitiesForDate(
     if (!searchRes.ok) {
       const body = await searchRes.text()
       console.error("[Jira] Search failed", searchRes.status, body)
-      return { activities: [], updatedTokenJson: updatedJson }
+      return { activities: [], updatedTokenCookie: updatedCookie }
     }
 
     const searchData = await searchRes.json()
@@ -184,9 +192,9 @@ export async function getJiraActivitiesForDate(
     }
 
     console.log(`[Jira] ${activities.length} activities for ${date}`)
-    return { activities, updatedTokenJson: updatedJson }
+    return { activities, updatedTokenCookie: updatedCookie }
   } catch (error) {
     console.error("[Jira] Error fetching activities", error)
-    return { activities: [], updatedTokenJson: updatedJson }
+    return { activities: [], updatedTokenCookie: updatedCookie }
   }
 }

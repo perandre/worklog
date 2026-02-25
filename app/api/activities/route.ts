@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   const slackToken = cookieStore.get("slack_token")?.value
   const trelloToken = cookieStore.get("trello_token")?.value
   const githubToken = cookieStore.get("github_token")?.value
-  const jiraTokenJson = cookieStore.get("jira_token")?.value
+  const jiraTokenCookie = cookieStore.get("jira_token")?.value
 
   if (!session?.accessToken) {
     return NextResponse.json(
@@ -75,9 +75,9 @@ export async function GET(request: NextRequest) {
         console.error("GitHub fetch error:", err?.message || err)
         return []
       }),
-      getJiraActivitiesForDate(date, jiraTokenJson).catch((err) => {
+      getJiraActivitiesForDate(date, jiraTokenCookie).catch((err) => {
         console.error("Jira fetch error:", err?.message || err)
-        return { activities: [], updatedTokenJson: null }
+        return { activities: [], updatedTokenCookie: null }
       }),
     ])
 
@@ -102,8 +102,8 @@ export async function GET(request: NextRequest) {
     })
 
     // If Jira token was refreshed, update the cookie on the response
-    if (jiraResult.updatedTokenJson) {
-      response.cookies.set("jira_token", jiraResult.updatedTokenJson, {
+    if (jiraResult.updatedTokenCookie) {
+      response.cookies.set("jira_token", jiraResult.updatedTokenCookie, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",

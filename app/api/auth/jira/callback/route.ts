@@ -73,17 +73,19 @@ export async function GET(request: NextRequest) {
       expiresAt: Date.now() + tokenData.expires_in * 1000,
     }
 
-    cookieStore.set("jira_token", JSON.stringify(jiraToken), {
+    const encodedToken = Buffer.from(JSON.stringify(jiraToken)).toString("base64")
+
+    console.log(`[Jira] OAuth successful, connected to ${site.name} (${site.url}), cookie length: ${encodedToken.length}`)
+
+    const response = NextResponse.redirect(new URL("/?jira_connected=true", process.env.NEXTAUTH_URL))
+    response.cookies.set("jira_token", encodedToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 365,
       path: "/",
     })
-
-    console.log(`[Jira] OAuth successful, connected to ${site.name} (${site.url})`)
-
-    return NextResponse.redirect(new URL("/?jira_connected=true", process.env.NEXTAUTH_URL))
+    return response
   } catch (error) {
     console.error("[Jira] OAuth error:", error)
     return NextResponse.redirect(new URL("/?jira_error=exchange_failed", process.env.NEXTAUTH_URL))
