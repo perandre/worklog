@@ -35,8 +35,11 @@ export class MilientPmAdapter implements PmAdapter {
     })
   }
 
-  // Get recently used project and activity type IDs from the last N days (cached)
-  private async getRecentUsage(days = 14): Promise<{ projectIds: Set<string>; activityTypeIds: Set<string> }> {
+  // Analyse the last N days of time records to produce ranked project + activity type lists
+  private async getRecentUsage(days = 14): Promise<{
+    topProjectIds: string[]                            // sorted by usage, max 20
+    topActivityTypeIdsByProject: Map<string, string[]> // top 3 per project
+  }> {
     const userId = await this.getUserAccountId()
     return cachedFetch(`recentUsage:${userId}:${days}`, async () => {
       const toDate = new Date().toISOString().split("T")[0]
@@ -44,27 +47,60 @@ export class MilientPmAdapter implements PmAdapter {
       const records = await milientListAll<any>("timeRecords", {
         params: { userAccountId: userId, fromDate, toDate },
       })
-      return {
-        projectIds: new Set(records.map((r: any) => String(r.projectId))),
-        activityTypeIds: new Set(records.map((r: any) => String(r.projectExtensionId)).filter(Boolean)),
+
+      // Count records per project, then take top 20
+      const projectCount = new Map<string, number>()
+      for (const r of records) {
+        const pid = String(r.projectId)
+        projectCount.set(pid, (projectCount.get(pid) || 0) + 1)
       }
+      const topProjectIds = Array.from(projectCount.entries())
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 20)
+        .map(([id]) => id)
+
+      // Count activity type usage per project, take top 3
+      const typeCountByProject = new Map<string, Map<string, number>>()
+      for (const r of records) {
+        const pid = String(r.projectId)
+        const tid = String(r.projectExtensionId)
+        if (!tid || tid === "undefined" || tid === "null") continue
+        if (!typeCountByProject.has(pid)) typeCountByProject.set(pid, new Map())
+        const m = typeCountByProject.get(pid)!
+        m.set(tid, (m.get(tid) || 0) + 1)
+      }
+      const topActivityTypeIdsByProject = new Map<string, string[]>()
+      Array.from(typeCountByProject.entries()).forEach(([pid, typeCount]) => {
+        const top3 = Array.from(typeCount.entries())
+          .sort((a: [string, number], b: [string, number]) => b[1] - a[1])
+          .slice(0, 3)
+          .map((entry: [string, number]) => entry[0])
+        topActivityTypeIdsByProject.set(pid, top3)
+      })
+
+      return { topProjectIds, topActivityTypeIdsByProject }
     })
   }
 
   async getProjects(): Promise<PmProject[]> {
     return cachedFetch(`projects:${this.userEmail}`, async () => {
-      const [allProjects, userProjectIds, { projectIds: recentProjectIds }] = await Promise.all([
+      const [allProjects, userProjectIds, { topProjectIds }] = await Promise.all([
         cachedFetch("projects:all", () => milientListAll<any>("projects", { includes: "base" })),
         this.getUserProjectIds(),
         this.getRecentUsage(),
       ])
 
+      const recentSet = new Set(topProjectIds)
       const filtered = allProjects.filter((p: any) =>
         userProjectIds.has(p.id) &&
         p.projectState === "inProgress" &&
-        recentProjectIds.has(String(p.id))
+        recentSet.has(String(p.id))
       )
-      console.log(`[PM] getProjects: ${allProjects.length} total → ${filtered.length} after filtering (inProgress + member + used last 14d)`)
+      // Sort by recency rank
+      const rank = new Map(topProjectIds.map((id, i) => [id, i]))
+      filtered.sort((a: any, b: any) => (rank.get(String(a.id)) ?? 99) - (rank.get(String(b.id)) ?? 99))
+
+      console.log(`[PM] getProjects: ${allProjects.length} total → ${filtered.length} (top 20 used last 14d)`)
       return filtered.map((p: any) => ({
         id: String(p.id),
         name: p.name,
@@ -90,7 +126,7 @@ export class MilientPmAdapter implements PmAdapter {
       })
     }
 
-    const [userProjectIds, { activityTypeIds: recentActivityTypeIds }] = await Promise.all([
+    const [userProjectIds, { topActivityTypeIdsByProject }] = await Promise.all([
       this.getUserProjectIds(),
       this.getRecentUsage(),
     ])
@@ -100,12 +136,16 @@ export class MilientPmAdapter implements PmAdapter {
         milientListAll<any>("projectExtensions", { includes: "base" })
       )
 
+      // Build flat set of allowed type IDs (top 3 per project)
+      const allowedTypeIds = new Set<string>()
+      Array.from(topActivityTypeIdsByProject.values()).forEach((ids: string[]) => ids.forEach((id) => allowedTypeIds.add(id)))
+
       const filtered = allExtensions.filter((a: any) =>
         userProjectIds.has(a.projectId) &&
-        recentActivityTypeIds.has(String(a.id)) &&
+        allowedTypeIds.has(String(a.id)) &&
         a.projectExtensionState !== "closed"
       )
-      console.log(`[PM] getActivityTypes: ${allExtensions.length} total → ${filtered.length} after filtering (recently used + not closed)`)
+      console.log(`[PM] getActivityTypes: ${allExtensions.length} total → ${filtered.length} (top 3/project used last 14d)`)
       return filtered.map((a: any) => ({
         id: String(a.id),
         name: a.name,

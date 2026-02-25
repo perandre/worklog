@@ -73,6 +73,19 @@ export function preprocessActivities(hours: Record<string, any>): PreprocessedDa
 
   activities.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
 
+  // Cap low-signal sources to keep prompt size manageable
+  const SOURCE_CAPS: Record<string, number> = { slack: 5, gmail: 5 }
+  const DEFAULT_CAP = 10
+  const sourceCounts = new Map<string, number>()
+  const capped: FlatActivity[] = []
+  for (const a of activities) {
+    const cap = SOURCE_CAPS[a.source] ?? DEFAULT_CAP
+    const count = sourceCounts.get(a.source) || 0
+    if (count < cap) { capped.push(a); sourceCounts.set(a.source, count + 1) }
+  }
+  activities.length = 0
+  capped.forEach((a) => activities.push(a))
+
   // Compute calendar minutes
   let calendarMinutes = 0
   const calendarEvents = activities.filter((a) => a.source === "calendar" && a.durationMinutes)
