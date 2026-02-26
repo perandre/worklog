@@ -248,22 +248,26 @@ function WorklogApp() {
               >
                 {t("header.week")}
               </Button>
-              <Separator orientation="vertical" className="h-6 hidden sm:block" />
-              <Button
-                variant={aiPanelEnabled ? "secondary" : "ghost"}
-                size="icon"
-                onClick={() => {
-                  setAiPanelEnabled((prev) => {
-                    const next = !prev
-                    localStorage.setItem("ai-panel-enabled", String(next))
-                    if (!next) setHighlightedActivities(new Set())
-                    return next
-                  })
-                }}
-                title="AI time log (⌘⇧L)"
-              >
-                <Sparkles className="h-4 w-4" />
-              </Button>
+              {viewMode === "day" && (
+                <>
+                  <Separator orientation="vertical" className="h-6 hidden sm:block" />
+                  <Button
+                    variant={aiPanelEnabled ? "secondary" : "ghost"}
+                    size="icon"
+                    onClick={() => {
+                      setAiPanelEnabled((prev) => {
+                        const next = !prev
+                        localStorage.setItem("ai-panel-enabled", String(next))
+                        if (!next) setHighlightedActivities(new Set())
+                        return next
+                      })
+                    }}
+                    title="AI time log (⌘⇧L)"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                  </Button>
+                </>
+              )}
               <LangToggle />
               <ThemeToggle />
             </div>
