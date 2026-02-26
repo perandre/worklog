@@ -101,14 +101,11 @@ export default function AboutPage() {
 
         {/* ── Hero ── */}
         <header className="pt-16 pb-14 fade-up fade-up-1">
-          <p className="text-xs tracking-widest uppercase text-muted-foreground mb-5 font-medium">
-            About Worklog
-          </p>
           <h1
             style={{ fontFamily: "'DM Serif Display', serif", lineHeight: 1.15 }}
             className="text-[2.8rem] mb-6 text-foreground"
           >
-            The app that turns your chaotic workday into a neat timelog
+            About Worklog
           </h1>
           <p className="text-lg text-muted-foreground leading-relaxed">
             You had a productive day. Back-to-back meetings, a long email thread, three code reviews, half a dozen Slack threads, and two Jira tickets closed. Then 4:55 PM arrives and your time-tracking system is just… waiting. Blinking cursor, empty rows.
@@ -124,7 +121,7 @@ export default function AboutPage() {
         <section className="mb-16 fade-up fade-up-2">
           <p className="text-xs tracking-widest uppercase text-muted-foreground font-medium mb-2">Section 01</p>
           <h2 style={{ fontFamily: "'DM Serif Display', serif" }} className="text-3xl mb-3">
-            Where your day comes from
+            Data sources
           </h2>
           <p className="text-muted-foreground leading-relaxed mb-8">
             Worklog connects to seven data sources. Each one contributes a different slice of your workday. You connect them once; after that they just show up.
@@ -159,7 +156,7 @@ export default function AboutPage() {
         <section className="mb-16 fade-up fade-up-3">
           <p className="text-xs tracking-widest uppercase text-muted-foreground font-medium mb-2">Section 02</p>
           <h2 style={{ fontFamily: "'DM Serif Display', serif" }} className="text-3xl mb-3">
-            From a pile of events to billable hours
+            How it works
           </h2>
           <p className="text-muted-foreground leading-relaxed mb-6">
             This is where the interesting stuff happens. Here's the full journey from "you pick a date" to "here's your timelog."
@@ -238,7 +235,7 @@ export default function AboutPage() {
         <section className="mb-16 fade-up fade-up-4">
           <p className="text-xs tracking-widest uppercase text-muted-foreground font-medium mb-2">Section 03</p>
           <h2 style={{ fontFamily: "'DM Serif Display', serif" }} className="text-3xl mb-3">
-            Supported time tracking systems
+            Time tracking
           </h2>
           <p className="text-muted-foreground leading-relaxed mb-6">
             Currently one system is supported, with the plumbing already in place to add more.
@@ -267,7 +264,7 @@ export default function AboutPage() {
         <section className="mb-16">
           <p className="text-xs tracking-widest uppercase text-muted-foreground font-medium mb-2">Section 04</p>
           <h2 style={{ fontFamily: "'DM Serif Display', serif" }} className="text-3xl mb-3">
-            Tech stack and other interesting facts
+            Tech stack
           </h2>
           <p className="text-muted-foreground leading-relaxed mb-8">
             The short version: Next.js, Gemini, no database, and a few architectural choices that made things surprisingly simple.
