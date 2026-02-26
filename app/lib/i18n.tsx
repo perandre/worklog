@@ -1,6 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
+import { VERSION } from "./version"
 
 export type Lang = "en" | "no"
 
@@ -22,7 +23,7 @@ const translations = {
   "connect.button": { en: "Connect", no: "Koble til" },
 
   // Footer
-  "footer.version": { en: "v1.3.5", no: "v1.3.5" },
+  "footer.version": { en: VERSION, no: VERSION },
 
   // Week view
   "week.today": { en: "Today", no: "I dag" },

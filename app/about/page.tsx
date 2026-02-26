@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { VERSION } from "@/app/lib/version"
 
 export const metadata = {
   title: "About — Worklog",
@@ -306,7 +307,7 @@ export default function AboutPage() {
           >
             ← Back to Worklog
           </Link>
-          <p className="text-xs text-muted-foreground">v1.3.5</p>
+          <p className="text-xs text-muted-foreground">{VERSION}</p>
         </div>
 
       </article>
