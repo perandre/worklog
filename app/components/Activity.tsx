@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { MessageSquare, Copy, Check } from "lucide-react"
+import { Copy, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n"
 
@@ -26,7 +26,7 @@ function formatDuration(startStr: string, endStr: string) {
 const sourceConfig = {
   calendar: { svg: "/google-calendar.svg" },
   gmail:    { svg: "/gmail.svg" },
-  slack:    { icon: MessageSquare, color: "bg-slack text-white" },
+  slack:    { svg: "/slack.svg" },
   docs:     { svg: "/google-drive.svg" },
   trello:   { svg: "/trello.svg" },
   github:   { svg: "/github.svg" },
