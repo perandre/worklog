@@ -90,17 +90,22 @@ export class MilientPmAdapter implements PmAdapter {
         this.getRecentUsage(),
       ])
 
-      const recentSet = new Set(topProjectIds)
       const filtered = allProjects.filter((p: any) =>
         userProjectIds.has(p.id) &&
-        p.projectState === "inProgress" &&
-        recentSet.has(String(p.id))
+        p.projectState === "inProgress"
       )
-      // Sort by recency rank
+      // Recently-used projects first (ranked by usage), then the rest alphabetically
       const rank = new Map(topProjectIds.map((id, i) => [id, i]))
-      filtered.sort((a: any, b: any) => (rank.get(String(a.id)) ?? 99) - (rank.get(String(b.id)) ?? 99))
+      filtered.sort((a: any, b: any) => {
+        const ra = rank.get(String(a.id))
+        const rb = rank.get(String(b.id))
+        if (ra !== undefined && rb !== undefined) return ra - rb
+        if (ra !== undefined) return -1
+        if (rb !== undefined) return 1
+        return (a.name || "").localeCompare(b.name || "")
+      })
 
-      console.log(`[PM] getProjects: ${allProjects.length} total → ${filtered.length} (top 20 used last 14d)`)
+      console.log(`[PM] getProjects: ${allProjects.length} total → ${filtered.length} (all active member projects, ${topProjectIds.length} recently used)`)
       return filtered.map((p: any) => ({
         id: String(p.id),
         name: p.name,
@@ -136,16 +141,21 @@ export class MilientPmAdapter implements PmAdapter {
         milientListAll<any>("projectExtensions", { includes: "base" })
       )
 
-      // Build flat set of allowed type IDs (top 3 per project)
       const allowedTypeIds = new Set<string>()
       Array.from(topActivityTypeIdsByProject.values()).forEach((ids: string[]) => ids.forEach((id) => allowedTypeIds.add(id)))
 
-      const filtered = allExtensions.filter((a: any) =>
-        userProjectIds.has(a.projectId) &&
-        allowedTypeIds.has(String(a.id)) &&
-        a.projectExtensionState !== "closed"
-      )
-      console.log(`[PM] getActivityTypes: ${allExtensions.length} total → ${filtered.length} (top 3/project used last 14d)`)
+      const projectsWithUsage = new Set(topActivityTypeIdsByProject.keys())
+
+      const filtered = allExtensions.filter((a: any) => {
+        if (!userProjectIds.has(a.projectId)) return false
+        if (a.projectExtensionState === "closed") return false
+        const pid = String(a.projectId)
+        // Recently-used projects: top 3 activity types only
+        if (projectsWithUsage.has(pid)) return allowedTypeIds.has(String(a.id))
+        // Projects without recent usage: include all open activity types
+        return true
+      })
+      console.log(`[PM] getActivityTypes: ${allExtensions.length} total → ${filtered.length} (top 3/project for recent, all for new)`)
       return filtered.map((a: any) => ({
         id: String(a.id),
         name: a.name,
