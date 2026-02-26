@@ -306,7 +306,7 @@ export default function AboutPage() {
           >
             ← Back to Worklog
           </Link>
-          <p className="text-xs text-muted-foreground">v1.3.4</p>
+          <p className="text-xs text-muted-foreground">v1.3.5</p>
         </div>
 
       </article>
