@@ -44,7 +44,7 @@ const translations = {
   // AI Panel
   "ai.title": { en: "Time logging", no: "Timelogging" },
   "ai.emptyDesc": { en: "Analyze today's activities and log your hours to Moment.", no: "Analyser dagens aktiviteter og logg timene dine i Moment." },
-  "ai.generate": { en: "Analyze & prepare log", no: "Analyser og forbered logg" },
+  "ai.generate": { en: "Analyze & prepare log", no: "Analyser & logg timer" },
   "ai.loading.projects": { en: "Looking up your projects...", no: "Slår opp prosjektene dine..." },
   "ai.loading.analyzing": { en: "Reading through today's activities...", no: "Leser gjennom dagens aktiviteter..." },
   "ai.loading.generating": { en: "Figuring out where the hours went...", no: "Finner ut hvor timene gikk..." },
