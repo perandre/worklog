@@ -95,8 +95,8 @@ export default function Activity({ activity, compact = false, isHighlighted = fa
       meta = `Trello · ${activity.type}${board}${list}`
     }
   } else if (activity.source === "github") {
-    title = activity.repoName || "GitHub"
-    meta = truncateText(activity.title, compact ? 30 : 60)
+    title = truncateText(activity.title, compact ? 30 : 60)
+    meta = activity.repoName || ""
   } else if (activity.source === "jira") {
     title = truncateText(`${activity.issueKey}: ${activity.issueSummary}`, compact ? 25 : 40)
     if (activity.type === "issue_transitioned") {

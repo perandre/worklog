@@ -159,6 +159,43 @@ async function getCommitsViaSearch(
   }))
 }
 
+async function resolveCommitPrUrls(
+  activities: GitHubActivity[],
+  token: string
+): Promise<void> {
+  const commits = activities.filter((a) => a.type === "commit" && a.url)
+  if (commits.length === 0) return
+
+  console.log(`[GitHub] Resolving PR URLs for ${commits.length} commits`)
+
+  await Promise.all(
+    commits.map(async (commit) => {
+      const match = commit.url!.match(/github\.com\/([^/]+\/[^/]+)\/commit\/([a-f0-9]+)/)
+      if (!match) return
+      const [, fullRepo, sha] = match
+
+      try {
+        const res = await fetch(
+          `https://api.github.com/repos/${fullRepo}/commits/${sha}/pulls`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              Accept: "application/vnd.github+json",
+            },
+          }
+        )
+        if (!res.ok) return
+        const pulls = await res.json()
+        if (pulls.length > 0) {
+          commit.url = pulls[0].html_url
+        }
+      } catch {
+        // Keep original commit URL
+      }
+    })
+  )
+}
+
 export async function getGitHubActivitiesForDate(
   date: string,
   token?: string
@@ -220,6 +257,9 @@ export async function getGitHubActivitiesForDate(
     })
 
     console.log(`[GitHub] Total before dedup: ${allActivities.length}, after dedup: ${deduped.length}`)
+
+    await resolveCommitPrUrls(deduped, token)
+
     return deduped
   } catch (error) {
     console.error("[GitHub] Error fetching activities", error)
