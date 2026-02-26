@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <!-- Jira Logo -->
+  <defs>
+    <linearGradient id="jira-grad-1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0052CC"/>
+      <stop offset="100%" stop-color="#2684FF"/>
+    </linearGradient>
+    <linearGradient id="jira-grad-2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2684FF"/>
+      <stop offset="100%" stop-color="#0052CC"/>
+    </linearGradient>
+  </defs>
+  <!-- Main body -->
+  <path d="M22.16 11.1L13.06 2l-1.06-1L4.22 8.78 1.84 11.1a.57.57 0 000 .8L8.62 18.7 12 22l7.78-7.78.27-.26 2.11-2.06a.57.57 0 000-.8zM12 15.36L8.64 12 12 8.64 15.36 12z" fill="#2684FF"/>
+  <!-- Left gradient shadow -->
+  <path d="M12 8.64a5.03 5.03 0 01-.02-7.08L4.2 9.36l3.42 3.42z" fill="url(#jira-grad-1)"/>
+  <!-- Right gradient shadow -->
+  <path d="M15.37 12L12 15.37a5.03 5.03 0 01.01 7.07l7.79-7.79z" fill="url(#jira-grad-2)"/>
+</svg>
