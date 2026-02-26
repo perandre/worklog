@@ -72,8 +72,10 @@ export class MilientPmAdapter implements PmAdapter {
         const m = typeCountByProject.get(pid)!
         m.set(tid, (m.get(tid) || 0) + 1)
       }
+      const topProjectIdSet = new Set(topProjectIds)
       const topActivityTypeIdsByProject = new Map<string, string[]>()
       Array.from(typeCountByProject.entries()).forEach(([pid, typeCount]) => {
+        if (!topProjectIdSet.has(pid)) return // only top 20 projects
         const top3 = Array.from(typeCount.entries())
           .sort((a: [string, number], b: [string, number]) => b[1] - a[1])
           .slice(0, 3)
