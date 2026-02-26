@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Mail, MessageSquare, FileText, Copy, Check, Trello, Github, Ticket } from "lucide-react"
+import { MessageSquare, Copy, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useTranslation } from "@/app/lib/i18n"
 
@@ -24,13 +24,13 @@ function formatDuration(startStr: string, endStr: string) {
 }
 
 const sourceConfig = {
-  calendar: { icon: Calendar, color: "bg-calendar text-white" },
-  gmail: { icon: Mail, color: "bg-gmail text-white" },
-  slack: { icon: MessageSquare, color: "bg-slack text-white" },
-  docs: { icon: FileText, color: "bg-docs text-white" },
-  trello: { icon: Trello, color: "bg-trello text-white" },
-  github: { icon: Github, color: "bg-github text-white" },
-  jira: { icon: Ticket, color: "bg-jira text-white" },
+  calendar: { svg: "/google-calendar.svg" },
+  gmail:    { svg: "/gmail.svg" },
+  slack:    { icon: MessageSquare, color: "bg-slack text-white" },
+  docs:     { svg: "/google-drive.svg" },
+  trello:   { svg: "/trello.svg" },
+  github:   { svg: "/github.svg" },
+  jira:     { svg: "/jira.svg" },
 } as const
 
 type Source = keyof typeof sourceConfig
@@ -171,8 +171,18 @@ export default function Activity({ activity, compact = false, isHighlighted = fa
 function SourceIcon({ source, compact = false }: { source: Source; compact?: boolean }) {
   const config = sourceConfig[source]
   if (!config) return null
-  const Icon = config.icon
 
+  if ("svg" in config) {
+    return (
+      <img
+        src={config.svg}
+        alt={source}
+        className={cn("shrink-0", compact ? "h-5 w-5" : "h-7 w-7")}
+      />
+    )
+  }
+
+  const Icon = config.icon
   return (
     <div
       className={cn(
