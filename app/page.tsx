@@ -276,7 +276,14 @@ function WorklogApp() {
         {error && (
           <Alert variant="destructive" className="mb-6">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
+            <AlertDescription className="flex items-center justify-between gap-4">
+              <span>{error}</span>
+              {error.includes("sign in again") && (
+                <Button variant="outline" size="sm" onClick={() => signOut()}>
+                  Sign out
+                </Button>
+              )}
+            </AlertDescription>
           </Alert>
         )}
 
