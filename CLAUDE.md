@@ -8,9 +8,7 @@ After each code change:
 1. Commit with a short descriptive message.
 2. Restart the Next.js dev server: `npm run dev`
 
-**Before pushing** (every `git push`), bump the version in **both** places:
-- `package.json` → `"version"`
-- `app/lib/i18n.tsx` → `"footer.version"` translation strings
+**Before pushing** (every `git push`), bump the version in `package.json` → `"version"`. That is the single source of truth — all other places (`i18n.tsx`, about page) read from it automatically via `app/lib/version.ts`.
 
 Use semver: patch for bug fixes, minor for features, major for breaking changes. This is mandatory — never push without checking the version.
 
