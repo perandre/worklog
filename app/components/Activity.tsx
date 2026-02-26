@@ -29,7 +29,7 @@ const sourceConfig = {
   slack:    { svg: "/slack.svg" },
   docs:     { svg: "/google-drive.svg" },
   trello:   { svg: "/trello.svg" },
-  github:   { svg: "/github.svg" },
+  github:   { svg: "/github.svg", className: "dark:invert" },
   jira:     { svg: "/jira.svg" },
 } as const
 
@@ -177,7 +177,7 @@ function SourceIcon({ source, compact = false }: { source: Source; compact?: boo
       <img
         src={config.svg}
         alt={source}
-        className={cn("shrink-0", compact ? "h-5 w-5" : "h-7 w-7")}
+        className={cn("shrink-0", compact ? "h-5 w-5" : "h-7 w-7", config.className)}
       />
     )
   }
