@@ -6,7 +6,7 @@ See also: [ARCHITECTURE.md](./ARCHITECTURE.md) | [PATTERNS.md](./PATTERNS.md) | 
 
 After each code change:
 1. Commit with a short descriptive message.
-2. Restart the Next.js dev server: `npm run dev`
+2. Push it
 
 **Before pushing** (every `git push`), bump the version in `package.json` → `"version"`. That is the single source of truth — all other places (`i18n.tsx`, about page) read from it automatically via `app/lib/version.ts`.
 
@@ -24,7 +24,6 @@ Use semver: patch for bug fixes, minor for features, major for breaking changes.
 
 - Commit after each logical change, not in large batches.
 - Never force-push, amend published commits, or skip hooks.
-- Never push without explicit user request.
 - Never commit `.env.local` or files containing secrets.
 
 ## Human Approval Gates
