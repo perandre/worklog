@@ -1,7 +1,7 @@
 import { PmAdapter } from "./adapter"
 import { MilientPmAdapter } from "./milient"
 
-export function getPmAdapter(userEmail?: string): PmAdapter {
+export function getPmAdapter(userEmail?: string, userAccountId?: string): PmAdapter {
   if (!userEmail) throw new Error("getPmAdapter: userEmail is required")
-  return new MilientPmAdapter(userEmail)
+  return new MilientPmAdapter(userEmail, userAccountId)
 }

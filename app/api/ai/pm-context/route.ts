@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
   try {
     const t0 = Date.now()
-    const adapter = getPmAdapter(session.user?.email ?? undefined)
+    const adapter = getPmAdapter(session.user?.email ?? undefined, session.milientUserId)
     const { searchParams } = new URL(request.url)
     const date = searchParams.get("date") || new Date().toISOString().split("T")[0]
 

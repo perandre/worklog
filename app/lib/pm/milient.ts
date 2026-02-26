@@ -6,14 +6,17 @@ import { milientFetch, milientList, milientListAll, cachedFetch, resolveUserAcco
 export class MilientPmAdapter implements PmAdapter {
   name = "milient"
   private userEmail: string
+  private preResolvedId: string | undefined
   private userAccountIdPromise: Promise<string> | null = null
   private timeRecordsCache = new Map<string, Promise<any[]>>()
 
-  constructor(userEmail: string) {
+  constructor(userEmail: string, userAccountId?: string) {
     this.userEmail = userEmail
+    this.preResolvedId = userAccountId
   }
 
   private getUserAccountId(): Promise<string> {
+    if (this.preResolvedId) return Promise.resolve(this.preResolvedId)
     if (!this.userAccountIdPromise) {
       this.userAccountIdPromise = resolveUserAccountId(this.userEmail)
     }

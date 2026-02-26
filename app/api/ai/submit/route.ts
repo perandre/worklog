@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const adapter = getPmAdapter(session.user?.email ?? undefined)
+    const adapter = getPmAdapter(session.user?.email ?? undefined, session.milientUserId)
 
     // Server-side guard: reject entries for locked dates
     const timeLockDate = await adapter.getTimeLockDate()

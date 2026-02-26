@@ -52,6 +52,33 @@ function formatWeekRange(mondayDateStr: string, locale: string) {
   return `${start.toLocaleDateString(locale, opts)} – ${end.toLocaleDateString(locale, { ...opts, year: "numeric" })}`
 }
 
+// ── Activity cache ────────────────────────────────────────────────────────────
+const ACTIVITY_CACHE_VERSION = 1
+
+function loadActivityCache(date: string): any | null {
+  try {
+    const raw = localStorage.getItem(`activities:${date}`)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (parsed.v !== ACTIVITY_CACHE_VERSION || parsed.date !== date) {
+      localStorage.removeItem(`activities:${date}`)
+      return null
+    }
+    return parsed.data
+  } catch {
+    return null
+  }
+}
+
+function saveActivityCache(date: string, data: any): void {
+  try {
+    localStorage.setItem(`activities:${date}`, JSON.stringify({ v: ACTIVITY_CACHE_VERSION, date, data }))
+  } catch {
+    // localStorage full or unavailable — ignore
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 function LangToggle() {
   const { lang, setLang } = useTranslation()
   return (
@@ -150,26 +177,66 @@ function WorklogApp() {
   useEffect(() => {
     if (status !== "authenticated") return
 
-    setLoading(true)
     setError(null)
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
 
     if (viewMode === "day") {
-      fetch(`/api/activities?date=${currentDate}&tz=${Intl.DateTimeFormat().resolvedOptions().timeZone}`)
+      const cached = loadActivityCache(currentDate)
+      if (cached) {
+        setData(cached)
+        setLoading(false)
+        if (currentDate !== today) return // Past dates never change — no fetch needed
+        // Today: fall through to background refresh without showing spinner
+      } else {
+        setLoading(true)
+      }
+
+      fetch(`/api/activities?date=${currentDate}&tz=${tz}`)
         .then((res) => res.json())
         .then((d) => {
           if (d.error) throw new Error(d.error)
           setData(d)
+          saveActivityCache(currentDate, d)
         })
-        .catch((err) => setError(err.message))
+        .catch((err) => {
+          if (!cached) setError(err.message)
+        })
         .finally(() => setLoading(false))
     } else {
       const monday = getMonday(currentDate)
       const days = getWeekDays(monday)
-      Promise.all(days.map((date) => fetch(`/api/activities?date=${date}&tz=${Intl.DateTimeFormat().resolvedOptions().timeZone}`).then((r) => r.json())))
+
+      // Show any cached days immediately
+      const cached = days.map((date) => ({ date, data: loadActivityCache(date) }))
+      const anyCached = cached.some((c) => c.data !== null)
+      if (anyCached) {
+        setWeekData(cached.map((c) => ({ date: c.date, data: c.data ?? {} })))
+        setLoading(false)
+      } else {
+        setLoading(true)
+      }
+
+      // Fetch today (always refresh) and any days with no cache
+      const toFetch = days.filter((d, i) => d === today || cached[i].data === null)
+      if (toFetch.length === 0) return
+
+      Promise.all(toFetch.map((date) => fetch(`/api/activities?date=${date}&tz=${tz}`).then((r) => r.json())))
         .then((results) => {
-          setWeekData(results.map((r, i) => ({ date: days[i], data: r })))
+          toFetch.forEach((date, i) => {
+            if (!results[i].error) saveActivityCache(date, results[i])
+          })
+          setWeekData((prev) => {
+            const baseMap = new Map(
+              (prev.length === days.length ? prev : cached.map((c) => ({ date: c.date, data: c.data ?? {} })))
+                .map((w) => [w.date, w.data])
+            )
+            toFetch.forEach((date, i) => baseMap.set(date, results[i]))
+            return days.map((date) => ({ date, data: baseMap.get(date) ?? {} }))
+          })
         })
-        .catch((err) => setError(err.message))
+        .catch((err) => {
+          if (!anyCached) setError(err.message)
+        })
         .finally(() => setLoading(false))
     }
   }, [currentDate, viewMode, status])
