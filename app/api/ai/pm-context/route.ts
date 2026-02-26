@@ -22,7 +22,7 @@ export async function GET(request: Request) {
       adapter.getTimeLockDate(),
     ])
 
-    console.log(`[Milient] pm-context: ${projects.length} projects | ${activityTypes.length} activity types | ${allocations.length} allocations | ${existingRecords.length} existing records (${Date.now() - t0}ms)`)
+    console.log(`[AI] pm-context: ${projects.length} projects | ${activityTypes.length} activity types | ${allocations.length} allocations | ${existingRecords.length} existing records (${Date.now() - t0}ms)`)
     return NextResponse.json({ projects, activityTypes, allocations, existingRecords, timeLockDate })
   } catch (error: any) {
     console.error("Error fetching PM context:", error)
