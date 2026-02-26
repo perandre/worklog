@@ -27,7 +27,9 @@ export async function POST(request: NextRequest) {
 
     const adapter = getAiAdapter()
     const prompt = assemblePrompt(preprocessed, pmContext, date)
-    console.log(`[AI] Input: ${preprocessed.activities.length} timeline events | ${pmContext.projects.length} Moment projects | ${pmContext.activityTypes.length} activity types → ${prompt.length} chars`)
+    const wordCount = prompt.split(/\s+/).filter(Boolean).length
+    const estTokens = Math.round(wordCount * 1.33)
+    console.log(`[AI] LLM input: ${preprocessed.activities.length} timeline events | ${pmContext.projects.length} Moment projects | ${pmContext.activityTypes.length} activity types → ~${estTokens} tokens (~${wordCount} words)`)
 
     const t1 = Date.now()
     const schema = { type: "array", items: { type: "object" } }
