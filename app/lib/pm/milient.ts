@@ -105,7 +105,7 @@ export class MilientPmAdapter implements PmAdapter {
       const rank = new Map(topProjectIds.map((id, i) => [id, i]))
       filtered.sort((a: any, b: any) => (rank.get(String(a.id)) ?? 99) - (rank.get(String(b.id)) ?? 99))
 
-      console.log(`[PM] getProjects: ${allProjects.length} total → ${filtered.length} (top 20 used last 14d)`)
+      console.log(`[Milient] Projects: ${allProjects.length} total → ${filtered.length} selected (active + member + top 20 by use last 14d)`)
       return filtered.map((p: any) => ({
         id: String(p.id),
         name: p.name,
@@ -150,7 +150,7 @@ export class MilientPmAdapter implements PmAdapter {
         allowedTypeIds.has(String(a.id)) &&
         a.projectExtensionState !== "closed"
       )
-      console.log(`[PM] getActivityTypes: ${allExtensions.length} total → ${filtered.length} (top 3/project used last 14d)`)
+      console.log(`[Milient] Activity types: ${allExtensions.length} total → ${filtered.length} selected (top 3/project across ${topActivityTypeIdsByProject.size} top-20 projects, last 14d)`)
       return filtered.map((a: any) => ({
         id: String(a.id),
         name: a.name,
