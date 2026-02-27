@@ -57,7 +57,8 @@ SCHEMA (return JSON array):
 ]
 ```
 
-SYNONYMS:
+MAPPINGS:
 - BKF = Barnekreftforeningen
+- Worklog = Frontkom Internal
 
 Generate suggestions now.
