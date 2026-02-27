@@ -526,7 +526,7 @@ function WorklogApp() {
             )}
           </div>
         ) : viewMode === "week" && weekData.length > 0 ? (
-          <WeekView weekData={weekData} today={today} locale={locale} />
+          <WeekView weekData={weekData} today={today} locale={locale} onDayClick={(date) => { setCurrentDate(date); setViewMode("day") }} />
         ) : null}
       </main>
 
@@ -644,7 +644,7 @@ function DayView({ data, highlightedActivities }: { data: any; highlightedActivi
   )
 }
 
-function WeekView({ weekData, today, locale }: { weekData: any[]; today: string; locale: string }) {
+function WeekView({ weekData, today, locale, onDayClick }: { weekData: any[]; today: string; locale: string; onDayClick: (date: string) => void }) {
   const { t } = useTranslation()
   return (
     <div className="overflow-x-auto pb-4">
@@ -652,7 +652,7 @@ function WeekView({ weekData, today, locale }: { weekData: any[]; today: string;
       {weekData.map(({ date, data }) => (
         <div key={date} className="min-w-0">
           <div className="flex items-center gap-2 mb-3">
-            <h3 className="font-medium text-sm">{formatDate(date, locale)}</h3>
+            <button onClick={() => onDayClick(date)} className="font-medium text-sm hover:underline hover:text-foreground text-muted-foreground transition-colors">{formatDate(date, locale)}</button>
             {date === today && <Badge variant="secondary">{t("week.today")}</Badge>}
           </div>
           <div className="space-y-1.5">
