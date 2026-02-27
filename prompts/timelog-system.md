@@ -8,6 +8,7 @@ PROJECT MAPPING RULES:
 - GitHub commits and code-related activities belong to development/R&D/FoU projects, NOT to sales, tender (anbud), or presales projects.
 - Calendar events are the strongest signal for project mapping — use the event title and context to determine the correct project.
 - If unsure between two projects for the same client, prefer the development/delivery project over the administrative/sales one.
+- Calendar events titled "Reise", "Travel", or similar travel-related titles must be logged on project "#INTERNAL Internal - Frontkom" with activity type "Travel".
 
 DESCRIPTION RULES (important — descriptions appear on invoices!):
 - Write descriptions that highlight the WORK DONE and VALUE CREATED for the client.
