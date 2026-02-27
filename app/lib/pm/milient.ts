@@ -52,7 +52,7 @@ export class MilientPmAdapter implements PmAdapter {
   }
 
   // Analyse the last N days of time records to produce ranked project + activity type lists
-  private async getRecentUsage(days = 14): Promise<{
+  private async getRecentUsage(days = 30): Promise<{
     topProjectIds: string[]                            // sorted by usage, max 50
     topActivityTypeIdsByProject: Map<string, string[]> // top 3 per project
   }> {
@@ -120,7 +120,7 @@ export class MilientPmAdapter implements PmAdapter {
       const rank = new Map(topProjectIds.map((id, i) => [id, i]))
       filtered.sort((a: any, b: any) => (rank.get(String(a.id)) ?? 99) - (rank.get(String(b.id)) ?? 99))
 
-      console.log(`[Milient] Projects: ${allProjects.length} total → ${filtered.length} selected (active + member + top 50 by use last 14d)`)
+      console.log(`[Milient] Projects: ${allProjects.length} total → ${filtered.length} selected (active + member + logged last 30d)`)
       return filtered.map((p: any) => {
         const roles = rolesByProject.get(p.id) || []
         return {
