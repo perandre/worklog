@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
-import { AlertCircle, ChevronLeft, ChevronRight, Calendar, Link2, LogOut, MessageSquare, Github, Ticket, X, Globe, Sparkles } from "lucide-react"
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Calendar, Link2, LogOut, MessageSquare, Github, Ticket, X, Globe, Sparkles } from "lucide-react"
 
 function formatDate(dateStr: string, locale: string) {
   const d = new Date(dateStr + "T12:00:00")
@@ -523,7 +523,7 @@ function WorklogApp() {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-2">
               <Badge variant="default" className="cursor-pointer gap-1" onClick={() => signOut()}>
-                Google <LogOut className="h-3 w-3" />
+                <CheckCircle2 className="h-3 w-3 text-green-400" /> Google <LogOut className="h-3 w-3" />
               </Badge>
               {serviceStatus.slack ? (
                 <Badge variant="default" className="cursor-pointer gap-1" onClick={() => {
@@ -531,7 +531,7 @@ function WorklogApp() {
                     setServiceStatus((s) => ({ ...s, slack: false }))
                   })
                 }}>
-                  Slack <LogOut className="h-3 w-3" />
+                  <CheckCircle2 className="h-3 w-3 text-green-400" /> Slack <LogOut className="h-3 w-3" />
                 </Badge>
               ) : (
                 <a href="/api/auth/slack">
@@ -544,7 +544,7 @@ function WorklogApp() {
                     setServiceStatus((s) => ({ ...s, trello: false }))
                   })
                 }}>
-                  Trello <LogOut className="h-3 w-3" />
+                  <CheckCircle2 className="h-3 w-3 text-green-400" /> Trello <LogOut className="h-3 w-3" />
                 </Badge>
               ) : (
                 <a href="/api/auth/trello">
@@ -557,7 +557,7 @@ function WorklogApp() {
                     setServiceStatus((s) => ({ ...s, github: false }))
                   })
                 }}>
-                  GitHub <LogOut className="h-3 w-3" />
+                  <CheckCircle2 className="h-3 w-3 text-green-400" /> GitHub <LogOut className="h-3 w-3" />
                 </Badge>
               ) : (
                 <a href="/api/auth/github">
@@ -570,7 +570,7 @@ function WorklogApp() {
                     setServiceStatus((s) => ({ ...s, jira: false }))
                   })
                 }}>
-                  Jira <LogOut className="h-3 w-3" />
+                  <CheckCircle2 className="h-3 w-3 text-green-400" /> Jira <LogOut className="h-3 w-3" />
                 </Badge>
               ) : (
                 <a href="/api/auth/jira">
