@@ -22,13 +22,14 @@ export async function GET(request: Request) {
       adapter.getTimeLockDate(),
     ])
 
-    // Always include all activity types for the internal project so rules like Travel always work
+    // Always include a curated set of Internal project activity types (e.g. Travel) regardless of recency
+    const INTERNAL_ALLOWED = new Set(["Meetings", "Admin", "HR/Recruitment", "Head of service area related work", "Travel", "Learning"])
     const internalProject = projects.find((p) => p.code === "INTERNAL")
     if (internalProject) {
       const internalTypes = await adapter.getActivityTypes(internalProject.id)
       const existing = new Set(activityTypes.map((t) => t.id))
       for (const t of internalTypes) {
-        if (!existing.has(t.id)) activityTypes.push(t)
+        if (INTERNAL_ALLOWED.has(t.name) && !existing.has(t.id)) activityTypes.push(t)
       }
     }
 
