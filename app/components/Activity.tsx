@@ -172,26 +172,11 @@ function SourceIcon({ source, compact = false }: { source: Source; compact?: boo
   const config = sourceConfig[source]
   if (!config) return null
 
-  if ("svg" in config) {
-    return (
-      <img
-        src={config.svg}
-        alt={source}
-        className={cn("shrink-0", compact ? "h-5 w-5" : "h-7 w-7", "className" in config ? config.className : undefined)}
-      />
-    )
-  }
-
-  const Icon = config.icon
   return (
-    <div
-      className={cn(
-        "shrink-0 rounded flex items-center justify-center",
-        config.color,
-        compact ? "h-5 w-5" : "h-7 w-7"
-      )}
-    >
-      <Icon className={compact ? "h-3 w-3" : "h-4 w-4"} />
-    </div>
+    <img
+      src={config.svg}
+      alt={source}
+      className={cn("shrink-0", compact ? "h-5 w-5" : "h-7 w-7", "className" in config ? config.className : undefined)}
+    />
   )
 }
