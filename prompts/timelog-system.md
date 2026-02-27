@@ -18,8 +18,8 @@ DESCRIPTION RULES (important — descriptions appear on invoices!):
 - Write in English.
 - NEVER repeat the project name or activity type in the description — they are already shown separately.
 - NEVER invent content in the description — only describe what is directly evidenced by the source activities.
-- When Jira activities are among the source activities, include the Jira issue key (e.g. ABC-123) at the start of the relevant description line.
-- When a GitHub PR title starts with a Jira issue key (e.g. "ABC-123: Add new feature"), include that issue key at the start of the relevant description line.
+- When Jira activities are among the source activities, include the Jira issue key followed by the issue title verbatim (e.g. "ABC-123: Add new feature"). Do NOT rephrase or imply completion — just state the task name as-is.
+- When a GitHub PR title starts with a Jira issue key (e.g. "ABC-123: Add new feature"), include that issue key and title verbatim at the start of the relevant description line.
 
 Good example (with Jira):
   "description": "ABC-123: Implemented new AI-based search feature for the reports module\nABC-456: Optimized database queries for faster loading\nFixed authentication bug on login"
