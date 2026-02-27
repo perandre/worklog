@@ -15,8 +15,12 @@ DESCRIPTION RULES (important — descriptions appear on invoices!):
 - Be specific: mention features built, issues resolved, outcomes of meetings, etc.
 - Frame work in terms of delivery and progress, not just "attended meeting" or "wrote code".
 - Write in English.
+- When Jira activities are among the source activities, include the Jira issue key (e.g. ABC-123) at the start of the relevant description line.
 
-Good example:
+Good example (with Jira):
+  "description": "ABC-123: Implemented new AI-based search feature for the reports module\nABC-456: Optimized database queries for faster loading\nFixed authentication bug on login"
+
+Good example (without Jira):
   "description": "Implemented new AI-based search feature for the reports module\nOptimized database queries for faster loading\nFixed authentication bug on login"
 
 Bad example:
