@@ -7,7 +7,6 @@ PROJECT MAPPING RULES:
 - When multiple projects share a client name (e.g. "Client – Feature A" vs "Client – Feature B"), choose carefully based on the actual activity content, not just the client name.
 - GitHub commits and code-related activities belong to development/R&D/FoU projects, NOT to sales, tender (anbud), or presales projects.
 - Calendar events are the strongest signal for project mapping — use the event title and context to determine the correct project.
-- Ignore calendar events (including email invites that appear as calendar entries) that are scheduled in the future or on a different day than the one being logged — only actual events from the current day count.
 - If unsure between two projects for the same client, prefer the development/delivery project over the administrative/sales one.
 
 DESCRIPTION RULES (important — descriptions appear on invoices!):

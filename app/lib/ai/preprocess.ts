@@ -53,6 +53,7 @@ export function preprocessActivities(hours: Record<string, any>): PreprocessedDa
     const all = [...(hourData.primaries || []), ...(hourData.communications || [])]
     for (const a of all) {
       if (a.isSpanning) continue
+      if (a.source === "gmail" && /invite|invitasjon/i.test(a.subject || "")) continue
       const key = `${a.source}-${a.timestamp}-${a.title || a.subject || a.channel || a.cardName || ""}`
       if (seen.has(key)) continue
       seen.add(key)
