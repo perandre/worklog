@@ -50,7 +50,6 @@ SCHEMA (return JSON array):
     "hours": number,
     "description": "English description for invoices, one line per aspect, newline-separated",
     "internalNote": "",
-    "reasoning": "Why this mapping was chosen",
     "confidence": "high" | "medium" | "low",
     "sourceActivities": [
       { "source": "string", "title": "string", "timestamp": "ISO string" }
