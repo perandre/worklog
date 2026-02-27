@@ -69,7 +69,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
   const [error, setError] = useState<string | null>(null)
   const [submitResults, setSubmitResults] = useState<Record<string, { success: boolean; error?: string }>>({})
   const [recentlyRejected, setRecentlyRejected] = useState<{ suggestion: TimeLogSuggestion; index: number } | null>(null)
-  const [existingExpanded, setExistingExpanded] = useState(false)
+  const [existingExpanded, setExistingExpanded] = useState(true)
 
   const existingRecords = pmContext?.existingRecords || []
   const existingHours = existingRecords.reduce((sum, r) => sum + r.hours, 0)
