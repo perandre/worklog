@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
-import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Calendar, Link2, LogOut, MessageSquare, Github, Ticket, X, Globe, Sparkles } from "lucide-react"
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, Calendar, Link2, LogOut, MessageSquare, Github, Ticket, X, Globe, Sparkles, RefreshCw } from "lucide-react"
 
 function formatDate(dateStr: string, locale: string) {
   const d = new Date(dateStr + "T12:00:00")
