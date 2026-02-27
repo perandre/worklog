@@ -99,6 +99,7 @@ function WorklogApp() {
   const locale = lang === "no" ? "nb-NO" : "en-US"
   const [currentDate, setCurrentDate] = useState(() => new Date().toISOString().split("T")[0])
   const [viewMode, setViewMode] = useState<"day" | "week">("day")
+  const [refreshKey, setRefreshKey] = useState(0)
   const [data, setData] = useState<any>(null)
   const [weekData, setWeekData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
@@ -239,7 +240,7 @@ function WorklogApp() {
         })
         .finally(() => setLoading(false))
     }
-  }, [currentDate, viewMode, status])
+  }, [currentDate, viewMode, status, refreshKey])
 
   const navigate = (direction: number) => {
     const d = new Date(currentDate + "T12:00:00")
@@ -295,6 +296,18 @@ function WorklogApp() {
               </span>
               <Button variant="ghost" size="icon" onClick={() => navigate(1)}>
                 <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-muted-foreground hover:text-foreground"
+                title="Refresh activities"
+                onClick={() => {
+                  localStorage.removeItem(`activities:${currentDate}`)
+                  setRefreshKey((k) => k + 1)
+                }}
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
               </Button>
             </div>
 
