@@ -1,20 +1,38 @@
 import { TimeLogSuggestion } from "../types/timelog"
 
-export function parseSuggestions(jsonString: string): TimeLogSuggestion[] {
-  // Try to extract JSON array from the response
-  let raw: any[]
+function tryParseArray(s: string): any[] | null {
   try {
-    raw = JSON.parse(jsonString)
+    const result = JSON.parse(s)
+    return Array.isArray(result) ? result : null
   } catch {
-    // Try to find JSON array in the string
+    return null
+  }
+}
+
+export function parseSuggestions(jsonString: string): TimeLogSuggestion[] {
+  let raw: any[] | null = null
+
+  // 1. Direct parse
+  raw = tryParseArray(jsonString)
+
+  // 2. Extract array from markdown/extra text
+  if (!raw) {
     const match = jsonString.match(/\[[\s\S]*\]/)
-    if (!match) throw new Error("Kunne ikke finne JSON i AI-svaret")
-    raw = JSON.parse(match[0])
+    if (match) raw = tryParseArray(match[0])
   }
 
-  if (!Array.isArray(raw)) {
-    throw new Error("AI-svaret er ikke en liste")
+  // 3. Truncated response — salvage up to last complete object
+  if (!raw) {
+    const start = jsonString.indexOf("[")
+    if (start !== -1) {
+      const lastClose = jsonString.lastIndexOf("}")
+      if (lastClose !== -1) {
+        raw = tryParseArray(jsonString.slice(start, lastClose + 1) + "]")
+      }
+    }
   }
+
+  if (!raw) throw new Error("Kunne ikke finne JSON i AI-svaret")
 
   return raw.map((item, i) => ({
     id: crypto.randomUUID(),
