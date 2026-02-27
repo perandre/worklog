@@ -16,6 +16,7 @@ DESCRIPTION RULES (important — descriptions appear on invoices!):
 - Be specific: mention features built, issues resolved, outcomes of meetings, etc.
 - Frame work in terms of delivery and progress, not just "attended meeting" or "wrote code".
 - Write in English.
+- NEVER repeat the project name or activity type in the description — they are already shown separately.
 - When Jira activities are among the source activities, include the Jira issue key (e.g. ABC-123) at the start of the relevant description line.
 - When a GitHub PR title starts with a Jira issue key (e.g. "ABC-123: Add new feature"), include that issue key at the start of the relevant description line.
 
