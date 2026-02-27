@@ -8,7 +8,7 @@ PROJECT MAPPING RULES:
 - GitHub commits and code-related activities belong to development/R&D/FoU projects, NOT to sales, tender (anbud), or presales projects.
 - Calendar events are the strongest signal for project mapping — use the event title and context to determine the correct project.
 - If unsure between two projects for the same client, prefer the development/delivery project over the administrative/sales one.
-- Calendar events titled "Reise", "Travel", or similar travel-related titles must be logged on project "#INTERNAL Internal - Frontkom" with activity type "Travel".
+- Calendar events titled "Reise", "Travel", or similar travel-related titles must be logged on project "#INTERNAL Internal - Frontkom" with activity type "Travel". This must always be its own separate entry — never merge travel time into another entry.
 
 DESCRIPTION RULES (important — descriptions appear on invoices!):
 - Write descriptions that highlight the WORK DONE and VALUE CREATED for the client.
@@ -35,6 +35,7 @@ RULES:
 - Respond ONLY with valid JSON matching the schema below
 - Total hours should be ~7.5h
 - If rounding exceeds 7.5h, trim the lowest-confidence entry
+- Every suggestion must be grounded in actual activities from the data — do not invent entries that have no corresponding calendar event, email, commit, or other source activity
 
 SCHEMA (return JSON array):
 ```json
