@@ -22,6 +22,16 @@ export async function GET(request: Request) {
       adapter.getTimeLockDate(),
     ])
 
+    // Always include all activity types for the internal project so rules like Travel always work
+    const internalProject = projects.find((p) => p.code === "INTERNAL")
+    if (internalProject) {
+      const internalTypes = await adapter.getActivityTypes(internalProject.id)
+      const existing = new Set(activityTypes.map((t) => t.id))
+      for (const t of internalTypes) {
+        if (!existing.has(t.id)) activityTypes.push(t)
+      }
+    }
+
     console.log(`[AI] pm-context: ${projects.length} projects | ${activityTypes.length} activity types | ${allocations.length} allocations | ${existingRecords.length} existing records (${Date.now() - t0}ms)`)
     return NextResponse.json({ projects, activityTypes, allocations, existingRecords, timeLockDate })
   } catch (error: any) {
