@@ -70,6 +70,8 @@ const translations = {
   "card.internalNote": { en: "Internal note", no: "Intern notat" },
   "card.basedOn": { en: "Based on", no: "Basert på" },
   "card.more": { en: "more", no: "til" },
+  "card.role": { en: "Role", no: "Rolle" },
+  "card.selectRole": { en: "Select role", no: "Velg rolle" },
   "card.approve": { en: "Approve", no: "Godkjenn" },
   "card.reject": { en: "Reject", no: "Forkast" },
 

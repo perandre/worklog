@@ -24,7 +24,10 @@ export class MilientPmAdapter implements PmAdapter {
   }
 
   // Get the user's active project memberships (cached per user)
-  private async getUserProjectIds(): Promise<Set<number>> {
+  private async getUserMemberships(): Promise<{
+    projectIds: Set<number>
+    rolesByProject: Map<number, { membershipId: number; roleName: string }[]>
+  }> {
     const userId = await this.getUserAccountId()
     return cachedFetch(`memberships:${userId}`, async () => {
       const memberships = await milientListAll<any>("projectMemberships", {
@@ -34,7 +37,17 @@ export class MilientPmAdapter implements PmAdapter {
           projectMembershipState: "active",
         },
       })
-      return new Set(memberships.map((m: any) => m.projectId as number))
+      const projectIds = new Set<number>()
+      const rolesByProject = new Map<number, { membershipId: number; roleName: string }[]>()
+      for (const m of memberships) {
+        projectIds.add(m.projectId)
+        if (!rolesByProject.has(m.projectId)) rolesByProject.set(m.projectId, [])
+        rolesByProject.get(m.projectId)!.push({
+          membershipId: m.id,
+          roleName: m.projectMembershipRoleName || "Default",
+        })
+      }
+      return { projectIds, rolesByProject }
     })
   }
 
@@ -89,9 +102,9 @@ export class MilientPmAdapter implements PmAdapter {
 
   async getProjects(): Promise<PmProject[]> {
     return cachedFetch(`projects:${this.userEmail}`, async () => {
-      const [allProjects, userProjectIds, { topProjectIds }] = await Promise.all([
+      const [allProjects, { projectIds: userProjectIds, rolesByProject }, { topProjectIds }] = await Promise.all([
         cachedFetch("projects:all", () => milientListAll<any>("projects", { includes: "base" })),
-        this.getUserProjectIds(),
+        this.getUserMemberships(),
         this.getRecentUsage(),
       ])
 
@@ -106,11 +119,15 @@ export class MilientPmAdapter implements PmAdapter {
       filtered.sort((a: any, b: any) => (rank.get(String(a.id)) ?? 99) - (rank.get(String(b.id)) ?? 99))
 
       console.log(`[Milient] Projects: ${allProjects.length} total → ${filtered.length} selected (active + member + top 50 by use last 14d)`)
-      return filtered.map((p: any) => ({
-        id: String(p.id),
-        name: p.name,
-        code: p.projectNumber || undefined,
-      }))
+      return filtered.map((p: any) => {
+        const roles = rolesByProject.get(p.id) || []
+        return {
+          id: String(p.id),
+          name: p.name,
+          code: p.projectNumber || undefined,
+          roles: roles.map((r) => ({ membershipId: String(r.membershipId), roleName: r.roleName })),
+        }
+      })
     })
   }
 
@@ -131,8 +148,8 @@ export class MilientPmAdapter implements PmAdapter {
       })
     }
 
-    const [userProjectIds, { topActivityTypeIdsByProject }] = await Promise.all([
-      this.getUserProjectIds(),
+    const [{ projectIds: userProjectIds }, { topActivityTypeIdsByProject }] = await Promise.all([
+      this.getUserMemberships(),
       this.getRecentUsage(),
     ])
 
@@ -242,6 +259,7 @@ export class MilientPmAdapter implements PmAdapter {
           description: entry.description,
           internalNote: entry.internalNote || undefined,
           userAccountId: Number(userId),
+          ...(entry.projectMembershipId ? { projectMembershipId: Number(entry.projectMembershipId) } : {}),
         },
       })
 

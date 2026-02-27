@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
             hours: entry.hours,
             description: entry.description,
             internalNote: entry.internalNote,
+            projectMembershipId: entry.projectMembershipId,
           })
           return { entryId: entry.id, ...result }
         } catch (error: any) {

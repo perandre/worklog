@@ -268,15 +268,21 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
   const handleSubmit = useCallback(async () => {
     setState("submitting")
     try {
-      const entries = approvedSuggestions.map((s) => ({
-        id: s.id,
-        projectId: s.projectId,
-        activityTypeId: s.activityTypeId,
-        date,
-        hours: s.hours,
-        description: s.description,
-        internalNote: s.internalNote,
-      }))
+      const entries = approvedSuggestions.map((s) => {
+        const project = pmContext?.projects.find((p) => p.id === s.projectId)
+        const membershipId = s.projectMembershipId
+          ?? (project?.roles?.length === 1 ? project.roles[0].membershipId : undefined)
+        return {
+          id: s.id,
+          projectId: s.projectId,
+          activityTypeId: s.activityTypeId,
+          date,
+          hours: s.hours,
+          description: s.description,
+          internalNote: s.internalNote,
+          projectMembershipId: membershipId,
+        }
+      })
 
       const res = await fetch("/api/ai/submit", {
         method: "POST",

@@ -119,11 +119,13 @@ export default function SuggestionCard({
               if (project) {
                 const newProjectTypes = activityTypes.filter((t) => t.projectId === project.id)
                 const firstType = newProjectTypes[0]
+                const autoMembershipId = project.roles?.length === 1 ? project.roles[0].membershipId : undefined
                 onUpdate({
                   projectId: project.id,
                   projectName: project.name,
                   activityTypeId: firstType?.id ?? "",
                   activityTypeName: firstType?.name ?? "",
+                  projectMembershipId: autoMembershipId,
                 })
               }
             }}
@@ -133,6 +135,28 @@ export default function SuggestionCard({
             ))}
           </select>
         </div>
+
+        {/* Role dropdown — only shown when project has multiple roles */}
+        {(() => {
+          const project = projects.find((p) => p.id === suggestion.projectId)
+          const roles = project?.roles ?? []
+          if (roles.length <= 1) return null
+          return (
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground">{t("card.role")}</label>
+              <select
+                className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+                value={suggestion.projectMembershipId ?? ""}
+                onChange={(e) => onUpdate({ projectMembershipId: e.target.value || undefined })}
+              >
+                <option value="">— {t("card.selectRole")} —</option>
+                {roles.map((r) => (
+                  <option key={r.membershipId} value={r.membershipId}>{r.roleName}</option>
+                ))}
+              </select>
+            </div>
+          )
+        })()}
 
         {/* Hours + Activity Type row */}
         <div className="grid grid-cols-2 gap-3">
