@@ -16,6 +16,7 @@ DESCRIPTION RULES (important — descriptions appear on invoices!):
 - Frame work in terms of delivery and progress, not just "attended meeting" or "wrote code".
 - Write in English.
 - When Jira activities are among the source activities, include the Jira issue key (e.g. ABC-123) at the start of the relevant description line.
+- When a GitHub PR title starts with a Jira issue key (e.g. "ABC-123: Add new feature"), include that issue key at the start of the relevant description line.
 
 Good example (with Jira):
   "description": "ABC-123: Implemented new AI-based search feature for the reports module\nABC-456: Optimized database queries for faster loading\nFixed authentication bug on login"
