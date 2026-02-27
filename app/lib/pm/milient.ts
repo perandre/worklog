@@ -60,9 +60,11 @@ export class MilientPmAdapter implements PmAdapter {
     return cachedFetch(`recentUsage:${userId}:${days}`, async () => {
       const toDate = new Date().toISOString().split("T")[0]
       const fromDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-      const records = await milientListAll<any>("timeRecords", {
+      const rawRecords = await milientListAll<any>("timeRecords", {
         params: { userAccountId: userId, fromDate, toDate },
       })
+      // Milient API may return records outside the requested range — filter client-side
+      const records = rawRecords.filter((r: any) => r.timeRecordDate >= fromDate && r.timeRecordDate <= toDate)
 
       // Count records per project, then take top 50
       const projectCount = new Map<string, number>()
