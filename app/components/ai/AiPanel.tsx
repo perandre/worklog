@@ -402,8 +402,8 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
           </div>
         )}
 
-        {/* Suggestions state */}
-        {(state === "suggestions" || state === "submitting" || state === "submitted") && (
+        {/* Suggestions / submitting state */}
+        {(state === "suggestions" || state === "submitting") && (
           <>
             <SuggestionProgress
               approvedHours={approvedHours}
@@ -416,7 +416,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
                 <SuggestionCard
                   key={suggestion.id}
                   suggestion={suggestion}
-                  isExpanded={expandedId === suggestion.id && state !== "submitted" && state !== "submitting"}
+                  isExpanded={expandedId === suggestion.id && state === "suggestions"}
                   onToggleExpand={() => state === "suggestions" && handleExpand(suggestion.id)}
                   onApprove={() => state === "suggestions" && !isLocked && handleApprove(suggestion.id)}
                   onReject={() => state === "suggestions" && !isLocked && handleReject(suggestion.id)}
@@ -440,27 +440,6 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
               </div>
             )}
 
-            {/* Submit results */}
-            {state === "submitted" && Object.keys(submitResults).length > 0 && (
-              <Card>
-                <CardContent className="p-3 space-y-1">
-                  {approvedSuggestions.map((s) => {
-                    const result = submitResults[s.id]
-                    return (
-                      <div key={s.id} className="flex items-center justify-between text-sm">
-                        <span>{s.projectName} — {s.hours}{t("progress.hoursUnit")}</span>
-                        {result?.success ? (
-                          <span className="text-green-500 text-xs">{t("ai.sent")}</span>
-                        ) : (
-                          <span className="text-destructive text-xs">{result?.error || t("ai.error")}</span>
-                        )}
-                      </div>
-                    )
-                  })}
-                </CardContent>
-              </Card>
-            )}
-
             {/* Locked banner */}
             {isLocked && (
               <div className="flex items-center gap-2 rounded-md bg-muted p-3 text-sm text-muted-foreground">
@@ -468,52 +447,72 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
                 {t("ai.locked")}
               </div>
             )}
-
-            {/* Action buttons */}
-            <div className="space-y-2 pt-2">
-              {pendingSuggestions.length > 0 && state === "suggestions" && !isLocked && (
-                <Button
-                  variant="outline"
-                  className="w-full gap-2"
-                  onClick={handleApproveAll}
-                >
-                  <CheckCheck className="h-4 w-4" />
-                  {t("ai.approveAll")}
-                </Button>
-              )}
-              {approvedSuggestions.length > 0 && state === "suggestions" && !isLocked && (
-                <Button
-                  className="w-full gap-2"
-                  onClick={handleSubmit}
-                >
-                  <Send className="h-4 w-4" />
-                  {t("ai.submit")}
-                </Button>
-              )}
-              {state === "submitting" && (
-                <Button className="w-full gap-2" disabled>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("ai.submitting")}
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                className="w-full gap-2"
-                onClick={() => generate(true)}
-                disabled={state === "submitting"}
-              >
-                <RefreshCw className="h-4 w-4" />
-                {t("ai.regenerate")}
-              </Button>
-            </div>
-
-            {/* Empty state */}
-            {visibleSuggestions.length === 0 && suggestions.length > 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                {t("ai.allRejected")}
-              </p>
-            )}
           </>
+        )}
+
+        {/* Submitted state — clean result list */}
+        {state === "submitted" && (
+          <>
+            <div className="space-y-2">
+              {approvedSuggestions.map((s) => {
+                const result = submitResults[s.id]
+                return (
+                  <div key={s.id} className="flex items-center justify-between rounded-md border px-3 py-2.5 text-sm">
+                    <div className="min-w-0">
+                      <span className="font-medium">{s.projectName}</span>
+                      <span className="text-muted-foreground"> · {s.activityTypeName}</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0 ml-2">
+                      <span className="tabular-nums text-muted-foreground">{s.hours}{t("progress.hoursUnit")}</span>
+                      {result?.success ? (
+                        <span className="text-green-500 text-xs font-medium">{t("ai.sent")}</span>
+                      ) : (
+                        <span className="text-destructive text-xs">{result?.error || t("ai.error")}</span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </>
+        )}
+
+        {(state === "suggestions" || state === "submitting" || state === "submitted") && (
+          <div className="space-y-2 pt-2">
+            {pendingSuggestions.length > 0 && state === "suggestions" && !isLocked && (
+              <Button variant="outline" className="w-full gap-2" onClick={handleApproveAll}>
+                <CheckCheck className="h-4 w-4" />
+                {t("ai.approveAll")}
+              </Button>
+            )}
+            {approvedSuggestions.length > 0 && state === "suggestions" && !isLocked && (
+              <Button className="w-full gap-2" onClick={handleSubmit}>
+                <Send className="h-4 w-4" />
+                {t("ai.submit")}
+              </Button>
+            )}
+            {state === "submitting" && (
+              <Button className="w-full gap-2" disabled>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t("ai.submitting")}
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => generate(true)}
+              disabled={state === "submitting"}
+            >
+              <RefreshCw className="h-4 w-4" />
+              {t("ai.regenerate")}
+            </Button>
+          </div>
+        )}
+
+        {state === "suggestions" && visibleSuggestions.length === 0 && suggestions.length > 0 && (
+          <p className="text-sm text-muted-foreground text-center py-4">
+            {t("ai.allRejected")}
+          </p>
         )}
       </div>
     </div>
