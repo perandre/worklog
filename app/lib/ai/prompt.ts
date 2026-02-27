@@ -47,13 +47,7 @@ ALREADY LOGGED TODAY (avoid double-logging):
 ${existingLogsList}
 
 TODAY'S ACTIVITIES:
-${activityList}
-
-ANALYSIS:
-- Calendar time: ${data.calendarMinutes} minutes
-- Time between meetings: ${data.gapMinutes} minutes
-- Lunch detected: ${data.lunchDetected ? "yes (−30 min)" : "no"}
-- Estimated active time: ${data.totalActiveMinutes} minutes`
+${activityList}`
 
   return systemPrompt.replace("Generate suggestions now.", context + "\n\nGenerate suggestions now.")
 }
