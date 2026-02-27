@@ -34,14 +34,14 @@ export async function POST(request: NextRequest) {
     console.log(`[AI] LLM input: ${preprocessed.activities.length} timeline events | ${pmContext.projects.length} Moment projects | ${pmContext.activityTypes.length} activity types → ~${estTokens} tokens (~${wordCount} words)`)
 
     const debugDir = join(process.cwd(), "tmp")
-    writeFileSync(join(debugDir, "ai-input.txt"), prompt, "utf-8")
+    if (!process.env.VERCEL) writeFileSync(join(debugDir, "ai-input.txt"), prompt, "utf-8")
 
     const t1 = Date.now()
     const schema = { type: "array", items: { type: "object" } }
     const jsonString = await adapter.generateSuggestions(prompt, schema)
     console.log(`[AI] Response: ${jsonString.length} chars (${Date.now() - t1}ms)`)
 
-    writeFileSync(join(debugDir, "ai-output.txt"), jsonString, "utf-8")
+    if (!process.env.VERCEL) writeFileSync(join(debugDir, "ai-output.txt"), jsonString, "utf-8")
 
     const projectMap = new Map(pmContext.projects.map((p) => [p.id, p.name]))
     const activityMap = new Map(pmContext.activityTypes.map((t) => [t.id, t.name]))
