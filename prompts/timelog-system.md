@@ -57,6 +57,6 @@ SCHEMA (return JSON array):
 
 MAPPINGS:
 - BKF = Barnekreftforeningen
-- GitHub repo "worklog" → project Frontkom Internal (it is an internal tool, not a client project)
+- GitHub repo "worklog" → project "Internal - Frontkom" (it is an internal tool, not a client project)
 
 Generate suggestions now.
