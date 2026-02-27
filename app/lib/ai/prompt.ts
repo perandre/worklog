@@ -9,10 +9,6 @@ const systemPrompt = readFileSync(
 )
 
 export function assemblePrompt(data: PreprocessedData, pmContext: PmContext, date: string): string {
-  const projectList = pmContext.projects
-    .map((p) => `- ${p.name} (ID: ${p.id}${p.code ? `, code: ${p.code}` : ""})`)
-    .join("\n")
-
   // Group activity types by project for clarity
   const typesByProject = new Map<string, typeof pmContext.activityTypes>()
   for (const t of pmContext.activityTypes) {
@@ -21,13 +17,12 @@ export function assemblePrompt(data: PreprocessedData, pmContext: PmContext, dat
     typesByProject.get(pid)!.push(t)
   }
 
-  const activityTypeList = pmContext.projects
+  const projectList = pmContext.projects
     .map((p) => {
       const types = typesByProject.get(p.id) || []
-      if (types.length === 0) return null
-      return `  ${p.name}:\n` + types.map((t) => `    - ${t.name} (ID: ${t.id})`).join("\n")
+      const typeLines = types.map((t) => `    - ${t.name} (ID: ${t.id})`).join("\n")
+      return `- ${p.name} (ID: ${p.id}${p.code ? `, code: ${p.code}` : ""})\n${typeLines}`
     })
-    .filter(Boolean)
     .join("\n")
 
   const existingLogsList = pmContext.allocations.length > 0
@@ -45,11 +40,8 @@ export function assemblePrompt(data: PreprocessedData, pmContext: PmContext, dat
   const context = `
 DATE: ${date}
 
-AVAILABLE PROJECTS:
+PROJECTS AND ACTIVITY TYPES:
 ${projectList}
-
-ACTIVITY TYPES (grouped by project):
-${activityTypeList}
 
 ALREADY LOGGED TODAY (avoid double-logging):
 ${existingLogsList}

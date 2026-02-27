@@ -5,6 +5,8 @@ import { PreprocessedData } from "@/app/lib/ai/preprocess"
 import { assemblePrompt } from "@/app/lib/ai/prompt"
 import { parseSuggestions } from "@/app/lib/ai/parse"
 import { PmContext } from "@/app/lib/types/pm"
+import { writeFileSync } from "fs"
+import { join } from "path"
 
 export async function POST(request: NextRequest) {
   const session = await auth()
@@ -31,10 +33,15 @@ export async function POST(request: NextRequest) {
     const estTokens = Math.round(wordCount * 1.33)
     console.log(`[AI] LLM input: ${preprocessed.activities.length} timeline events | ${pmContext.projects.length} Moment projects | ${pmContext.activityTypes.length} activity types → ~${estTokens} tokens (~${wordCount} words)`)
 
+    const debugDir = join(process.cwd(), "tmp")
+    writeFileSync(join(debugDir, "ai-input.txt"), prompt, "utf-8")
+
     const t1 = Date.now()
     const schema = { type: "array", items: { type: "object" } }
     const jsonString = await adapter.generateSuggestions(prompt, schema)
     console.log(`[AI] Response: ${jsonString.length} chars (${Date.now() - t1}ms)`)
+
+    writeFileSync(join(debugDir, "ai-output.txt"), jsonString, "utf-8")
 
     const suggestions = parseSuggestions(jsonString)
     const totalHours = suggestions.reduce((sum, s) => sum + s.hours, 0)
