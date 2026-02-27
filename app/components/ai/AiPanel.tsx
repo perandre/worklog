@@ -93,7 +93,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       setState(cached.state)
       setError(null)
       setExpandedId(null)
-      setExistingExpanded(false)
+      setExistingExpanded(true)
     } else {
       // Reset when switching to an uncached date
       setSuggestions([])
@@ -102,7 +102,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       setState("ready")
       setError(null)
       setExpandedId(null)
-      setExistingExpanded(false)
+      setExistingExpanded(true)
       // Eagerly fetch pmContext so existing records show before generating
       fetch(`/api/ai/pm-context?date=${date}`)
         .then((r) => r.ok ? r.json() : null)
