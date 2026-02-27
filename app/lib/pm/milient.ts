@@ -40,7 +40,7 @@ export class MilientPmAdapter implements PmAdapter {
 
   // Analyse the last N days of time records to produce ranked project + activity type lists
   private async getRecentUsage(days = 14): Promise<{
-    topProjectIds: string[]                            // sorted by usage, max 20
+    topProjectIds: string[]                            // sorted by usage, max 50
     topActivityTypeIdsByProject: Map<string, string[]> // top 3 per project
   }> {
     const userId = await this.getUserAccountId()
@@ -51,7 +51,7 @@ export class MilientPmAdapter implements PmAdapter {
         params: { userAccountId: userId, fromDate, toDate },
       })
 
-      // Count records per project, then take top 20
+      // Count records per project, then take top 50
       const projectCount = new Map<string, number>()
       for (const r of records) {
         const pid = String(r.projectId)
@@ -59,7 +59,7 @@ export class MilientPmAdapter implements PmAdapter {
       }
       const topProjectIds = Array.from(projectCount.entries())
         .sort((a, b) => b[1] - a[1])
-        .slice(0, 20)
+        .slice(0, 50)
         .map(([id]) => id)
 
       // Count activity type usage per project, take top 3
@@ -105,7 +105,7 @@ export class MilientPmAdapter implements PmAdapter {
       const rank = new Map(topProjectIds.map((id, i) => [id, i]))
       filtered.sort((a: any, b: any) => (rank.get(String(a.id)) ?? 99) - (rank.get(String(b.id)) ?? 99))
 
-      console.log(`[Milient] Projects: ${allProjects.length} total → ${filtered.length} selected (active + member + top 20 by use last 14d)`)
+      console.log(`[Milient] Projects: ${allProjects.length} total → ${filtered.length} selected (active + member + top 50 by use last 14d)`)
       return filtered.map((p: any) => ({
         id: String(p.id),
         name: p.name,
