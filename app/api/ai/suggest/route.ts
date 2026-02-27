@@ -43,7 +43,14 @@ export async function POST(request: NextRequest) {
 
     writeFileSync(join(debugDir, "ai-output.txt"), jsonString, "utf-8")
 
-    const suggestions = parseSuggestions(jsonString)
+    const projectMap = new Map(pmContext.projects.map((p) => [p.id, p.name]))
+    const activityMap = new Map(pmContext.activityTypes.map((t) => [t.id, t.name]))
+
+    const suggestions = parseSuggestions(jsonString).map((s) => ({
+      ...s,
+      projectName: projectMap.get(s.projectId) ?? s.projectId,
+      activityTypeName: activityMap.get(s.activityTypeId) ?? s.activityTypeId,
+    }))
     const totalHours = suggestions.reduce((sum, s) => sum + s.hours, 0)
     console.log(`[AI] ${suggestions.length} suggestions, ${totalHours}h total (${Date.now() - t0}ms)`)
 

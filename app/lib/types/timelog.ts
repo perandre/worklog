@@ -7,7 +7,6 @@ export type TimeLogSuggestion = {
   projectMembershipId?: string
   hours: number
   description: string
-  internalNote: string
   confidence: "high" | "medium" | "low"
   sourceActivities: {
     source: string

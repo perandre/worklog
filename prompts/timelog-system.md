@@ -31,9 +31,9 @@ Bad example:
 RULES:
 - Norwegian workday is 7.5 hours
 - Round to nearest 0.5 hour per project (minimum 0.5h)
-- Do NOT generate internalNote (leave as empty string)
 - Respond ONLY with valid JSON matching the schema below
 - Include at most 3 sourceActivities per suggestion (the most representative ones)
+- Consolidate all activities for the same project into a single entry — do not create separate entries per commit or per email
 - Total hours should be ~7.5h
 - If rounding exceeds 7.5h, trim the lowest-confidence entry
 - Every suggestion must be grounded in actual activities from the data — do not invent entries that have no corresponding calendar event, email, commit, or other source activity
@@ -44,12 +44,9 @@ SCHEMA (return JSON array):
 [
   {
     "projectId": "string",
-    "projectName": "string",
     "activityTypeId": "string",
-    "activityTypeName": "string",
     "hours": number,
     "description": "English description for invoices, one line per aspect, newline-separated",
-    "internalNote": "",
     "confidence": "high" | "medium" | "low",
     "sourceActivities": [
       { "source": "string", "title": "string", "timestamp": "ISO string" }

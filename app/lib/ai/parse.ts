@@ -37,12 +37,11 @@ export function parseSuggestions(jsonString: string): TimeLogSuggestion[] {
   return raw.map((item, i) => ({
     id: crypto.randomUUID(),
     projectId: String(item.projectId || ""),
-    projectName: String(item.projectName || "Ukjent prosjekt"),
+    projectName: "",
     activityTypeId: String(item.activityTypeId || ""),
-    activityTypeName: String(item.activityTypeName || "Ukjent type"),
+    activityTypeName: "",
     hours: roundToHalf(Number(item.hours) || 0.5),
     description: String(item.description || ""),
-    internalNote: String(item.internalNote || ""),
     confidence: validateConfidence(item.confidence),
     sourceActivities: Array.isArray(item.sourceActivities)
       ? item.sourceActivities.map((sa: any) => ({

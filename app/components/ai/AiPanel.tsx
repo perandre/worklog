@@ -279,7 +279,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
           date,
           hours: s.hours,
           description: s.description,
-          internalNote: s.internalNote,
+          internalNote: undefined,
           projectMembershipId: membershipId,
         }
       })

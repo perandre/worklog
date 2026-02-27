@@ -21,7 +21,7 @@ export function assemblePrompt(data: PreprocessedData, pmContext: PmContext, dat
     .map((p) => {
       const types = typesByProject.get(p.id) || []
       const typeLines = types.map((t) => `    - ${t.name} (ID: ${t.id})`).join("\n")
-      return `- ${p.name} (ID: ${p.id}${p.code ? `, code: ${p.code}` : ""})\n${typeLines}`
+      return `- ${p.name} (ID: ${p.id})\n${typeLines}`
     })
     .join("\n")
 
