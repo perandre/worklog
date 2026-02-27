@@ -117,7 +117,14 @@ export default function SuggestionCard({
             onChange={(e) => {
               const project = projects.find((p) => p.id === e.target.value)
               if (project) {
-                onUpdate({ projectId: project.id, projectName: project.name })
+                const newProjectTypes = activityTypes.filter((t) => t.projectId === project.id)
+                const firstType = newProjectTypes[0]
+                onUpdate({
+                  projectId: project.id,
+                  projectName: project.name,
+                  activityTypeId: firstType?.id ?? "",
+                  activityTypeName: firstType?.name ?? "",
+                })
               }
             }}
           >
