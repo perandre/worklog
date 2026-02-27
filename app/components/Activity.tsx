@@ -71,7 +71,8 @@ export default function Activity({ activity, compact = false, isHighlighted = fa
     meta = truncateText(activity.text, compact ? 30 : 60)
   } else if (activity.source === "gmail") {
     title = truncateText(activity.subject, compact ? 25 : 40)
-    meta = activity.from ? `From: ${activity.from.split("<")[0].trim()}` : ""
+    const emailMatch = activity.from?.match(/<([^>]+)>/)
+    meta = emailMatch ? `From: ${emailMatch[1]}` : activity.from ? `From: ${activity.from}` : ""
   } else if (activity.source === "docs") {
     title = truncateText(activity.title, compact ? 25 : 40)
     meta = activity.type === "edit" ? t("activity.edited") :
