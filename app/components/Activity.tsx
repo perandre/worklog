@@ -177,7 +177,7 @@ function SourceIcon({ source, compact = false }: { source: Source; compact?: boo
       <img
         src={config.svg}
         alt={source}
-        className={cn("shrink-0", compact ? "h-5 w-5" : "h-7 w-7", config.className)}
+        className={cn("shrink-0", compact ? "h-5 w-5" : "h-7 w-7", "className" in config ? config.className : undefined)}
       />
     )
   }
