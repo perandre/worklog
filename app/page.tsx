@@ -53,7 +53,7 @@ function formatWeekRange(mondayDateStr: string, locale: string) {
 }
 
 // ── Activity cache ────────────────────────────────────────────────────────────
-const ACTIVITY_CACHE_VERSION = 1
+const ACTIVITY_CACHE_VERSION = 2
 
 function loadActivityCache(date: string): any | null {
   try {
