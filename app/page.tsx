@@ -36,7 +36,7 @@ function getMonday(dateStr: string) {
 
 function getWeekDays(mondayDateStr: string) {
   const days = []
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 7; i++) {
     const d = new Date(mondayDateStr + "T12:00:00")
     d.setDate(d.getDate() + i)
     days.push(d.toISOString().split("T")[0])
@@ -648,7 +648,7 @@ function WeekView({ weekData, today, locale, onDayClick }: { weekData: any[]; to
   const { t } = useTranslation()
   return (
     <div className="overflow-x-auto pb-4">
-    <div className="grid grid-cols-5 gap-3 min-w-[1200px]">
+    <div className="grid grid-cols-7 gap-3 min-w-[1400px]">
       {weekData.map(({ date, data }) => (
         <div key={date} className="min-w-0">
           <div className="flex items-center gap-2 mb-3">
