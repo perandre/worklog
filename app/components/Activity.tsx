@@ -11,6 +11,22 @@ function truncateText(text: string, maxLen = 40) {
   return text.length > maxLen ? text.substring(0, maxLen) + "..." : text
 }
 
+function formatAttendees(attendees: string[]): string {
+  const filtered = attendees
+    .filter(Boolean)
+    .filter((e) => !e.includes("resource.calendar.google.com"))
+  const limited = filtered.slice(0, 5)
+  const formatted = limited.map((email) => {
+    const at = email.indexOf("@")
+    if (at === -1) return email
+    const local = email.slice(0, at)
+    const domain = email.slice(at)
+    return local.length > 23 ? local.slice(0, 23) + "…" + domain : email
+  })
+  const overflow = filtered.length - limited.length
+  return formatted.join(", ") + (overflow > 0 ? ` +${overflow}` : "")
+}
+
 function formatDuration(startStr: string, endStr: string) {
   if (!startStr || !endStr) return null
   const start = new Date(startStr)
@@ -63,7 +79,7 @@ export default function Activity({ activity, compact = false, isHighlighted = fa
     title = truncateText(activity.title, compact ? 25 : 40)
     duration = formatDuration(activity.timestamp, activity.endTime)
     if (activity.attendees?.length > 0) {
-      meta = activity.attendees.filter(Boolean).join(", ")
+      meta = formatAttendees(activity.attendees)
     }
   } else if (activity.source === "slack") {
     title = activity.isDm ? activity.channel : `#${activity.channel}`
