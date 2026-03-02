@@ -63,8 +63,7 @@ export default function Activity({ activity, compact = false, isHighlighted = fa
     title = truncateText(activity.title, compact ? 25 : 40)
     duration = formatDuration(activity.timestamp, activity.endTime)
     if (activity.attendees?.length > 0) {
-      const count = activity.attendees.length
-      meta = `${count} ${count > 1 ? t("activity.attendees") : t("activity.attendee")}`
+      meta = activity.attendees.filter(Boolean).join(", ")
     }
   } else if (activity.source === "slack") {
     title = activity.isDm ? activity.channel : `#${activity.channel}`
