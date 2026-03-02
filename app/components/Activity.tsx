@@ -69,7 +69,7 @@ export default function Activity({ activity, compact = false, isHighlighted = fa
         </div>
       )
     }
-    title = truncateText(activity.title, compact ? 25 : 40)
+    title = compact ? truncateText(activity.title, 25) : (activity.title || "Untitled event")
     duration = formatDuration(activity.timestamp, activity.endTime)
     if (activity.attendees?.length > 0) {
       meta = formatAttendees(activity.attendees)
@@ -78,11 +78,11 @@ export default function Activity({ activity, compact = false, isHighlighted = fa
     title = activity.isDm ? activity.channel : `#${activity.channel}`
     meta = truncateText(activity.text, compact ? 30 : 60)
   } else if (activity.source === "gmail") {
-    title = truncateText(activity.subject, compact ? 25 : 40)
+    title = compact ? truncateText(activity.subject, 25) : (activity.subject || "Untitled email")
     const emailMatch = activity.from?.match(/<([^>]+)>/)
     meta = emailMatch ? `From: ${emailMatch[1]}` : activity.from ? `From: ${activity.from}` : ""
   } else if (activity.source === "docs") {
-    title = truncateText(activity.title, compact ? 25 : 40)
+    title = compact ? truncateText(activity.title, 25) : (activity.title || "Untitled doc")
     meta = activity.type === "edit" ? t("activity.edited") :
            activity.type === "comment" ? t("activity.commented") :
            activity.type === "delete" ? t("activity.deleted") :
@@ -91,7 +91,7 @@ export default function Activity({ activity, compact = false, isHighlighted = fa
   } else if (activity.source === "trello") {
     const board = activity.boardName ? ` · ${activity.boardName}` : ""
     const list = activity.listName ? ` · ${activity.listName}` : ""
-    title = truncateText(activity.cardName || t("activity.trelloCard"), compact ? 25 : 40)
+    title = compact ? truncateText(activity.cardName || t("activity.trelloCard"), 25) : (activity.cardName || t("activity.trelloCard"))
     if (activity.type === "card_created") {
       meta = `${t("activity.created")}${board}${list}`
     } else if (activity.type === "card_commented") {
@@ -107,7 +107,7 @@ export default function Activity({ activity, compact = false, isHighlighted = fa
     title = activity.repoName || "GitHub"
     meta = truncateText(activity.title, compact ? 30 : 60)
   } else if (activity.source === "jira") {
-    title = truncateText(`${activity.issueKey}: ${activity.issueSummary}`, compact ? 25 : 40)
+    title = compact ? truncateText(`${activity.issueKey}: ${activity.issueSummary}`, 25) : `${activity.issueKey}: ${activity.issueSummary}`
     if (activity.type === "issue_transitioned") {
       meta = activity.detail || t("activity.moved")
     } else if (activity.type === "issue_commented") {
