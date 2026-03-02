@@ -16,15 +16,8 @@ function formatAttendees(attendees: string[]): string {
     .filter(Boolean)
     .filter((e) => !e.includes("resource.calendar.google.com"))
   const limited = filtered.slice(0, 5)
-  const formatted = limited.map((email) => {
-    const at = email.indexOf("@")
-    if (at === -1) return email
-    const local = email.slice(0, at)
-    const domain = email.slice(at)
-    return local.length > 23 ? local.slice(0, 23) + "…" + domain : email
-  })
   const overflow = filtered.length - limited.length
-  return formatted.join(", ") + (overflow > 0 ? ` +${overflow}` : "")
+  return limited.join(", ") + (overflow > 0 ? ` +${overflow}` : "")
 }
 
 function formatDuration(startStr: string, endStr: string) {
