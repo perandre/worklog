@@ -155,7 +155,7 @@ export default function Activity({ activity, compact = false, isHighlighted = fa
       <SourceIcon source={activity.source} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium truncate">{titleContent}</span>
+          <span className="font-medium truncate min-w-0">{titleContent}</span>
           {duration && (
             <button
               onClick={copyDuration}
