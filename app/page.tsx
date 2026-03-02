@@ -624,7 +624,7 @@ function DayView({ data, highlightedActivities }: { data: any; highlightedActivi
               <div className="w-14 shrink-0 text-right text-sm text-muted-foreground pt-3">
                 {hour.toString().padStart(2, "0")}:00
               </div>
-              <Card className="flex-1">
+              <Card className="flex-1 min-w-0 overflow-hidden">
                 <CardContent className="p-3">
                   <div className="space-y-2">
                     {(hourData.primaries || []).map((event: any, i: number) => (
