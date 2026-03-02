@@ -171,7 +171,7 @@ export default function Activity({ activity, compact = false, isHighlighted = fa
             </button>
           )}
         </div>
-        {meta && <p className="text-xs text-muted-foreground mt-0.5 truncate">{meta}</p>}
+        {meta && <p className="text-xs text-muted-foreground mt-0.5 break-words">{meta}</p>}
       </div>
     </div>
   )
