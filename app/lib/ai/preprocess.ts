@@ -33,7 +33,7 @@ export type PreprocessedData = {
 function getActivityTitle(a: RawActivity): string {
   if (a.source === "calendar") return a.title || "Untitled event"
   if (a.source === "gmail") return a.subject || "Untitled email"
-  if (a.source === "slack") return `${a.isDm ? "DM" : "#" + a.channel}: ${a.text || ""}`.slice(0, 60)
+  if (a.source === "slack") return a.isDm ? `DM: ${a.channel}` : `#${a.channel}`
   if (a.source === "docs") return `${a.type || "Edited"}: ${a.title || "Untitled doc"}`
   if (a.source === "trello") return a.cardName || "Trello activity"
   if (a.source === "github") return `${a.repoName || "GitHub"}: ${a.title || ""}`.slice(0, 80)
