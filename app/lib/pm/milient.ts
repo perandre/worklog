@@ -109,9 +109,9 @@ export class MilientPmAdapter implements PmAdapter {
         tasksByActivityType.get(tid)!.set(String(r.taskId), { id: String(r.taskId), name: r.taskName })
       }
       const topTasksByActivityType = new Map<string, PmTask[]>()
-      for (const [tid, tasks] of tasksByActivityType) {
+      tasksByActivityType.forEach((tasks, tid) => {
         topTasksByActivityType.set(tid, Array.from(tasks.values()).slice(0, 3))
-      }
+      })
 
       return { topProjectIds, topActivityTypeIdsByProject, topTasksByActivityType }
     })
