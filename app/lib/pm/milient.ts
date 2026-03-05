@@ -1,5 +1,5 @@
 import { PmAdapter } from "./adapter"
-import { PmProject, PmActivityType, PmAllocation, PmTimeRecord } from "../types/pm"
+import { PmProject, PmActivityType, PmTask, PmAllocation, PmTimeRecord } from "../types/pm"
 import { TimeLogSubmission } from "../types/timelog"
 import { milientFetch, milientList, milientListAll, cachedFetch, resolveUserAccountId } from "../milient"
 
@@ -55,6 +55,7 @@ export class MilientPmAdapter implements PmAdapter {
   private async getRecentUsage(days = 30): Promise<{
     topProjectIds: string[]                            // sorted by usage, max 50
     topActivityTypeIdsByProject: Map<string, string[]> // top 3 per project
+    topTasksByActivityType: Map<string, PmTask[]>      // top 3 tasks per activity type
   }> {
     const userId = await this.getUserAccountId()
     return cachedFetch(`recentUsage:${userId}:${days}`, async () => {
@@ -98,7 +99,21 @@ export class MilientPmAdapter implements PmAdapter {
         topActivityTypeIdsByProject.set(pid, top3)
       })
 
-      return { topProjectIds, topActivityTypeIdsByProject }
+      // Derive tasks by activity type (top 3, insertion order = most recently seen)
+      const tasksByActivityType = new Map<string, Map<string, PmTask>>()
+      for (const r of records) {
+        if (!r.taskId || !r.taskName) continue
+        const tid = String(r.projectExtensionId)
+        if (!tid || tid === "undefined" || tid === "null") continue
+        if (!tasksByActivityType.has(tid)) tasksByActivityType.set(tid, new Map())
+        tasksByActivityType.get(tid)!.set(String(r.taskId), { id: String(r.taskId), name: r.taskName })
+      }
+      const topTasksByActivityType = new Map<string, PmTask[]>()
+      for (const [tid, tasks] of tasksByActivityType) {
+        topTasksByActivityType.set(tid, Array.from(tasks.values()).slice(0, 3))
+      }
+
+      return { topProjectIds, topActivityTypeIdsByProject, topTasksByActivityType }
     })
   }
 
@@ -150,7 +165,7 @@ export class MilientPmAdapter implements PmAdapter {
       })
     }
 
-    const [{ projectIds: userProjectIds }, { topActivityTypeIdsByProject }] = await Promise.all([
+    const [{ projectIds: userProjectIds }, { topActivityTypeIdsByProject, topTasksByActivityType }] = await Promise.all([
       this.getUserMemberships(),
       this.getRecentUsage(),
     ])
@@ -169,11 +184,12 @@ export class MilientPmAdapter implements PmAdapter {
         allowedTypeIds.has(String(a.id)) &&
         a.projectExtensionState !== "closed"
       )
-      console.log(`[Milient] Activity types: ${allExtensions.length} total → ${filtered.length} selected (top 3/project across ${topActivityTypeIdsByProject.size} top-20 projects, last 14d)`)
+      console.log(`[Milient] Activity types: ${allExtensions.length} total → ${filtered.length} selected (top 3/project across ${topActivityTypeIdsByProject.size} top-20 projects, last 30d)`)
       return filtered.map((a: any) => ({
         id: String(a.id),
         name: a.name,
         projectId: String(a.projectId),
+        tasks: topTasksByActivityType.get(String(a.id)) ?? [],
       }))
     })
   }
@@ -262,6 +278,7 @@ export class MilientPmAdapter implements PmAdapter {
           internalNote: entry.internalNote || undefined,
           userAccountId: Number(userId),
           ...(entry.projectMembershipId ? { projectMembershipId: Number(entry.projectMembershipId) } : {}),
+          ...(entry.taskId ? { taskId: Number(entry.taskId) } : {}),
         },
       })
 

@@ -5,6 +5,8 @@ export type TimeLogSuggestion = {
   activityTypeId: string
   activityTypeName: string
   projectMembershipId?: string
+  taskId?: string
+  taskName?: string
   hours: number
   description: string
   confidence: "high" | "medium" | "low"
@@ -25,6 +27,7 @@ export type TimeLogSubmission = {
   description: string
   internalNote?: string
   projectMembershipId?: string
+  taskId?: string
 }
 
 export type AiSuggestionResponse = {

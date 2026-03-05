@@ -72,6 +72,8 @@ const translations = {
   "card.more": { en: "more", no: "til" },
   "card.role": { en: "Role", no: "Rolle" },
   "card.selectRole": { en: "Select role", no: "Velg rolle" },
+  "card.task": { en: "Task", no: "Oppgave" },
+  "card.noTask": { en: "No task", no: "Ingen oppgave" },
   "card.approve": { en: "Approve", no: "Godkjenn" },
   "card.reject": { en: "Reject", no: "Forkast" },
 

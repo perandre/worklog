@@ -59,6 +59,8 @@ export default function SuggestionCard({
   const projectTypes = activityTypes.filter((t) => t.projectId === suggestion.projectId)
   const filteredActivityTypes = projectTypes.length > 0 ? projectTypes : activityTypes
 
+  const selectedActivityType = activityTypes.find((t) => t.id === suggestion.activityTypeId)
+
   if (isSkipped) return null
 
   // Compact view
@@ -187,7 +189,7 @@ export default function SuggestionCard({
               onChange={(e) => {
                 const at = filteredActivityTypes.find((t) => t.id === e.target.value)
                 if (at) {
-                  onUpdate({ activityTypeId: at.id, activityTypeName: at.name })
+                  onUpdate({ activityTypeId: at.id, activityTypeName: at.name, taskId: undefined, taskName: undefined })
                 }
               }}
             >
@@ -197,6 +199,23 @@ export default function SuggestionCard({
             </select>
           </div>
         </div>
+
+        {/* Task dropdown — only shown when selected activity type has tasks */}
+        {selectedActivityType?.tasks && selectedActivityType.tasks.length > 0 && (
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">{t("card.task")}</label>
+            <select
+              className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+              value={suggestion.taskId ?? ""}
+              onChange={(e) => onUpdate({ taskId: e.target.value || undefined, taskName: selectedActivityType.tasks?.find((tk) => tk.id === e.target.value)?.name })}
+            >
+              <option value="">— {t("card.noTask")} —</option>
+              {selectedActivityType.tasks.map((task) => (
+                <option key={task.id} value={task.id}>{task.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Description */}
         <div className="space-y-1">
