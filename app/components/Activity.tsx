@@ -40,6 +40,7 @@ const sourceConfig = {
   trello:   { svg: "/trello.svg" },
   github:   { svg: "/github.svg", className: "dark:invert" },
   jira:     { svg: "/jira.svg" },
+  hubspot:  { svg: "/hubspot.svg" },
 } as const
 
 type Source = keyof typeof sourceConfig
@@ -113,6 +114,9 @@ export default function Activity({ activity, compact = false, isHighlighted = fa
     } else if (activity.type === "issue_commented") {
       meta = truncateText(activity.detail ? `${t("activity.commented")}: ${activity.detail}` : t("activity.commented"), compact ? 30 : 60)
     }
+  } else if (activity.source === "hubspot") {
+    title = compact ? truncateText(activity.title, 25) : (activity.title || "Untitled deal")
+    meta = activity.detail || ""
   }
 
   const copyDuration = () => {

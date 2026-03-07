@@ -5,6 +5,7 @@ import { isConfigured as isSlackConfigured } from "@/app/lib/slack"
 import { isConfigured as isTrelloConfigured } from "@/app/lib/trello"
 import { isConfigured as isGitHubConfigured } from "@/app/lib/github"
 import { isConfigured as isJiraConfigured } from "@/app/lib/jira"
+import { isConfigured as isHubSpotConfigured } from "@/app/lib/hubspot"
 
 export async function GET() {
   const session = await auth()
@@ -16,6 +17,7 @@ export async function GET() {
   const trelloToken = cookieStore.get("trello_token")?.value
   const githubToken = cookieStore.get("github_token")?.value
   const jiraToken = cookieStore.get("jira_token")?.value
+  const hubspotToken = cookieStore.get("hubspot_token")?.value
 
   return NextResponse.json({
     google: !!session?.accessToken,
@@ -23,5 +25,6 @@ export async function GET() {
     trello: isTrelloConfigured({ token: trelloToken }),
     github: isGitHubConfigured(githubToken),
     jira: isJiraConfigured(jiraToken),
+    hubspot: isHubSpotConfigured(hubspotToken),
   })
 }

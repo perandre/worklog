@@ -20,6 +20,8 @@ const translations = {
   "connect.github.desc": { en: "See your commits, PRs, and issues", no: "Se commits, PRs og issues" },
   "connect.jira.title": { en: "Connect Jira", no: "Koble til Jira" },
   "connect.jira.desc": { en: "See your Jira issue transitions and comments", no: "Se Jira-saksoverganger og kommentarer" },
+  "connect.hubspot.title": { en: "Connect HubSpot", no: "Koble til HubSpot" },
+  "connect.hubspot.desc": { en: "See deals you worked on today", no: "Se deals du jobbet med i dag" },
   "connect.button": { en: "Connect", no: "Koble til" },
 
   // Footer

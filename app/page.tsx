@@ -104,11 +104,12 @@ function WorklogApp() {
   const [weekData, setWeekData] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [serviceStatus, setServiceStatus] = useState({ google: false, slack: false, trello: false, github: false, jira: false })
+  const [serviceStatus, setServiceStatus] = useState({ google: false, slack: false, trello: false, github: false, jira: false, hubspot: false })
   const [slackBannerDismissed, setSlackBannerDismissed] = useState(true)
   const [trelloBannerDismissed, setTrelloBannerDismissed] = useState(true)
   const [githubBannerDismissed, setGithubBannerDismissed] = useState(true)
   const [jiraBannerDismissed, setJiraBannerDismissed] = useState(true)
+  const [hubspotBannerDismissed, setHubspotBannerDismissed] = useState(true)
   const [aiPanelEnabled, setAiPanelEnabled] = useState(true)
   const [isDesktop, setIsDesktop] = useState(true)
   useEffect(() => {
@@ -166,6 +167,7 @@ function WorklogApp() {
     setTrelloBannerDismissed(localStorage.getItem("trello-banner-dismissed") === "true")
     setGithubBannerDismissed(localStorage.getItem("github-banner-dismissed") === "true")
     setJiraBannerDismissed(localStorage.getItem("jira-banner-dismissed") === "true")
+    setHubspotBannerDismissed(localStorage.getItem("hubspot-banner-dismissed") === "true")
   }, [])
 
   useEffect(() => {
@@ -487,6 +489,35 @@ function WorklogApp() {
           </div>
         )}
 
+        {!serviceStatus.hubspot && !hubspotBannerDismissed && (
+          <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border bg-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#FF7A59] text-white">
+                <img src="/hubspot.svg" alt="HubSpot" className="h-5 w-5 invert" />
+              </div>
+              <div>
+                <p className="font-medium">{t("connect.hubspot.title")}</p>
+                <p className="text-sm text-muted-foreground">{t("connect.hubspot.desc")}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button asChild>
+                <a href="/api/auth/hubspot">{t("connect.button")}</a>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  localStorage.setItem("hubspot-banner-dismissed", "true")
+                  setHubspotBannerDismissed(true)
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
@@ -588,6 +619,19 @@ function WorklogApp() {
               ) : (
                 <a href="/api/auth/jira">
                   <Badge variant="outline" className="gap-1"><Link2 className="h-3 w-3" /> Jira</Badge>
+                </a>
+              )}
+              {serviceStatus.hubspot ? (
+                <Badge variant="default" className="cursor-pointer gap-1" onClick={() => {
+                  fetch("/api/auth/hubspot/disconnect", { method: "POST" }).then(() => {
+                    setServiceStatus((s) => ({ ...s, hubspot: false }))
+                  })
+                }}>
+                  <CheckCircle2 className="h-3 w-3 text-green-400" /> HubSpot <LogOut className="h-3 w-3" />
+                </Badge>
+              ) : (
+                <a href="/api/auth/hubspot">
+                  <Badge variant="outline" className="gap-1"><Link2 className="h-3 w-3" /> HubSpot</Badge>
                 </a>
               )}
             </div>

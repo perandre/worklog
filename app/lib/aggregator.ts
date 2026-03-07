@@ -1,5 +1,5 @@
 type Activity = {
-  source: "calendar" | "gmail" | "slack" | "docs" | "trello" | "github" | "jira"
+  source: "calendar" | "gmail" | "slack" | "docs" | "trello" | "github" | "jira" | "hubspot"
   type: string
   timestamp: Date
   endTime?: Date
@@ -91,6 +91,7 @@ function mergeHourActivities(hourActivities: Activity[]): HourData {
   const trello = hourActivities.filter((a) => a.source === "trello")
   const github = hourActivities.filter((a) => a.source === "github")
   const jira = hourActivities.filter((a) => a.source === "jira")
+  const hubspot = hourActivities.filter((a) => a.source === "hubspot")
 
   const primaries = calendar
 
@@ -98,7 +99,7 @@ function mergeHourActivities(hourActivities: Activity[]): HourData {
     gmail.filter((email) => !isCalendarEmail(email))
   )
 
-  const communications = [...slack, ...filteredEmails, ...docs, ...trello, ...github, ...jira].sort(
+  const communications = [...slack, ...filteredEmails, ...docs, ...trello, ...github, ...jira, ...hubspot].sort(
     (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
   )
 

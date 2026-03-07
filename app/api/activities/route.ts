@@ -6,6 +6,7 @@ import { getMessages } from "@/app/lib/slack"
 import { getTrelloActivitiesForDate } from "@/app/lib/trello"
 import { getGitHubActivitiesForDate } from "@/app/lib/github"
 import { getJiraActivitiesForDate } from "@/app/lib/jira"
+import { getHubSpotActivitiesForDate } from "@/app/lib/hubspot"
 import { processActivities, getDaySummary } from "@/app/lib/aggregator"
 
 export async function GET(request: NextRequest) {
@@ -15,6 +16,7 @@ export async function GET(request: NextRequest) {
   const trelloToken = cookieStore.get("trello_token")?.value
   const githubToken = cookieStore.get("github_token")?.value
   const jiraTokenCookie = cookieStore.get("jira_token")?.value
+  const hubspotTokenCookie = cookieStore.get("hubspot_token")?.value
 
   if (!session?.accessToken) {
     return NextResponse.json(
@@ -49,7 +51,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const [calendarEvents, emails, docActivity, slackMessages, trelloActivities, githubActivities, jiraResult] = await Promise.all([
+    const [calendarEvents, emails, docActivity, slackMessages, trelloActivities, githubActivities, jiraResult, hubspotResult] = await Promise.all([
       getCalendarEvents(session.accessToken, date).catch((err) => {
         console.error("Calendar fetch error:", err.message)
         return []
@@ -79,10 +81,15 @@ export async function GET(request: NextRequest) {
         console.error("Jira fetch error:", err?.message || err)
         return { activities: [], updatedTokenCookie: null }
       }),
+      getHubSpotActivitiesForDate(date, hubspotTokenCookie).catch((err) => {
+        console.error("HubSpot fetch error:", err?.message || err)
+        return { activities: [], updatedTokenCookie: null }
+      }),
     ])
 
     const jiraActivities = jiraResult.activities || []
-    const allActivities = [...calendarEvents, ...emails, ...docActivity, ...slackMessages, ...trelloActivities, ...githubActivities, ...jiraActivities]
+    const hubspotActivities = hubspotResult.activities || []
+    const allActivities = [...calendarEvents, ...emails, ...docActivity, ...slackMessages, ...trelloActivities, ...githubActivities, ...jiraActivities, ...hubspotActivities]
     const hours = processActivities(allActivities, 6, 23, timezone)
     const summary = getDaySummary(hours)
 
@@ -98,12 +105,24 @@ export async function GET(request: NextRequest) {
         trello: trelloActivities.length,
         github: githubActivities.length,
         jira: jiraActivities.length,
+        hubspot: hubspotActivities.length,
       },
     })
 
     // If Jira token was refreshed, update the cookie on the response
     if (jiraResult.updatedTokenCookie) {
       response.cookies.set("jira_token", jiraResult.updatedTokenCookie, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 365,
+        path: "/",
+      })
+    }
+
+    // If HubSpot token was refreshed, update the cookie on the response
+    if (hubspotResult.updatedTokenCookie) {
+      response.cookies.set("hubspot_token", hubspotResult.updatedTokenCookie, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
