@@ -67,6 +67,8 @@ GEMINI_API_KEY=...
 2. Under **OAuth & Permissions**, add User Token Scopes: `search:read`, `users:read`, `im:read`
 3. Add redirect URL: `https://your-app.vercel.app/api/auth/slack/callback`
 
+> **Nice to have — local dev HTTPS:** Slack requires HTTPS redirect URIs and won't accept `http://localhost`. To develop locally with Slack OAuth, run `next dev --experimental-https` (Next.js 14 generates a local cert automatically), set `NEXTAUTH_URL=https://localhost:3000` in `.env.local`, and add `https://localhost:3000/api/auth/slack/callback` as an additional redirect URL in Slack. Optionally install `mkcert` (`brew install mkcert && mkcert -install`) to avoid browser cert warnings.
+
 ## Trello Setup
 
 1. Get your API key at [trello.com/power-ups/admin](https://trello.com/power-ups/admin)
