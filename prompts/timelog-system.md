@@ -35,11 +35,12 @@ RULES:
 - Round to nearest 0.5 hour per project (minimum 0.5h)
 - Respond ONLY with valid JSON matching the schema below
 - Include at most 3 sourceActivities per suggestion (the most representative ones)
-- Consolidate all activities for the same project into a single entry — do not create separate entries per commit or per email
-- Total hours should be ~7.5h
-- If rounding exceeds 7.5h, trim the lowest-confidence entry
+- One entry per (projectId + activityTypeId) combination — never create two entries with the same project and activity type. Merge all evidence into a single entry.
+- Total hours across all entries must sum to exactly 7.5h — adjust hours to ensure this
+- If rounding would push total above 7.5h, reduce the lowest-confidence entry's hours to compensate
 - Every suggestion must be grounded in actual activities from the data — do not invent entries that have no corresponding calendar event, email, commit, or other source activity
 - The projectId and activityTypeId in your response must always be taken directly from the provided project/activity list — never invent or approximate IDs
+- HR/Recruitment must only be used when there is explicit evidence of recruitment work: interviews, reviewing CVs, writing job postings, or onboarding new hires. A Slack message, email reply, or general communication is NOT sufficient evidence — classify those under Meetings or Admin instead.
 
 SCHEMA (return JSON array):
 ```json
