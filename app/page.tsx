@@ -112,6 +112,7 @@ function WorklogApp() {
   const [hubspotBannerDismissed, setHubspotBannerDismissed] = useState(true)
   const [aiPanelEnabled, setAiPanelEnabled] = useState(true)
   const [isDesktop, setIsDesktop] = useState(true)
+  const [authNotification, setAuthNotification] = useState<{ type: "error" | "success"; message: string } | null>(null)
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)")
     setIsDesktop(mq.matches)
@@ -176,6 +177,32 @@ function WorklogApp() {
       .then(setServiceStatus)
       .catch(console.error)
   }, [session])
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const services: Array<{ key: string; label: string }> = [
+      { key: "github", label: "GitHub" },
+      { key: "slack", label: "Slack" },
+      { key: "trello", label: "Trello" },
+      { key: "jira", label: "Jira" },
+      { key: "hubspot", label: "HubSpot" },
+      { key: "google", label: "Google" },
+    ]
+    for (const { key, label } of services) {
+      const errorVal = params.get(`${key}_error`)
+      if (errorVal) {
+        setAuthNotification({ type: "error", message: `Failed to connect ${label}: ${errorVal.replace(/_/g, " ")}` })
+        window.history.replaceState({}, "", "/")
+        return
+      }
+      if (params.get(`${key}_connected`) === "true") {
+        setAuthNotification({ type: "success", message: `${label} connected successfully` })
+        window.history.replaceState({}, "", "/")
+        fetch("/api/status").then((res) => res.json()).then(setServiceStatus).catch(console.error)
+        return
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (status !== "authenticated") return
@@ -369,6 +396,22 @@ function WorklogApp() {
                   Sign out
                 </Button>
               )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {authNotification && (
+          <Alert variant={authNotification.type === "error" ? "destructive" : "default"} className="mb-6">
+            {authNotification.type === "error" ? (
+              <AlertCircle className="h-4 w-4" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4" />
+            )}
+            <AlertDescription className="flex items-center justify-between gap-4">
+              <span>{authNotification.message}</span>
+              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setAuthNotification(null)}>
+                <X className="h-4 w-4" />
+              </Button>
             </AlertDescription>
           </Alert>
         )}
