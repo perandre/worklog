@@ -1,12 +1,12 @@
 # Worklog
 
-AI-powered time logging for consultants. Aggregates your day hour-by-hour from Google, Slack, Trello, GitHub, and Jira — then uses AI to generate ready-to-submit time entries mapped to your projects in Milient/Moment.
+AI-powered time logging for consultants. Aggregates your day hour-by-hour from Google, Slack, Trello, GitHub, Jira, and HubSpot — then uses AI to generate ready-to-submit time entries mapped to your projects in Milient/Moment.
 
 Built with Next.js 14, shadcn/ui, Tailwind CSS, and Google Gemini. No database. Supports dark mode.
 
 ## What it does
 
-1. **Aggregates your day** — fetches activity from up to 7 sources (Calendar, Gmail, Docs, Slack, Trello, GitHub, Jira) and lays it out hour by hour.
+1. **Aggregates your day** — fetches activity from up to 8 sources (Calendar, Gmail, Docs, Slack, Trello, GitHub, Jira, HubSpot) and lays it out hour by hour.
 2. **Generates time entries** — sends your activities + project context from Milient to Gemini, which returns structured time log suggestions with hours and descriptions.
 3. **Submits to Milient** — you review, edit, and submit. Time lock enforcement is handled server-side.
 
@@ -44,6 +44,10 @@ GITHUB_CLIENT_SECRET=...
 # Jira Cloud OAuth
 JIRA_CLIENT_ID=...
 JIRA_CLIENT_SECRET=...
+
+# HubSpot OAuth
+HUBSPOT_CLIENT_ID=...
+HUBSPOT_CLIENT_SECRET=...
 
 # Milient/Moment (time tracking)
 MILIENT_API_KEY=...
@@ -85,6 +89,26 @@ GEMINI_API_KEY=...
 1. Create an OAuth 2.0 app at [developer.atlassian.com](https://developer.atlassian.com/console/myapps/)
 2. Add callback URL: `https://your-app.vercel.app/api/auth/jira/callback`
 3. Add scopes: `read:jira-user`, `read:jira-work`
+
+## HubSpot Setup
+
+HubSpot requires a developer app created via the HubSpot CLI:
+
+```bash
+npm install -g @hubspot/cli@latest
+hs account auth
+hs project create --name worklog-app --dest /tmp/hubspot-app --project-base app --distribution private --auth oauth
+```
+
+Edit `src/app/app-hsmeta.json` — set scope to `crm.objects.deals.read` and add redirect URLs:
+- `https://your-app.vercel.app/api/auth/hubspot/callback`
+- `https://localhost:3000/api/auth/hubspot/callback`
+
+Then upload and get credentials:
+```bash
+hs project upload
+hs project open  # → Auth tab → copy Client ID and Client secret
+```
 
 ## Milient / Moment Setup
 
