@@ -42,7 +42,7 @@ async function getAccessToken(
 
   console.log("[HubSpot] Refreshing token...")
 
-  const res = await fetch("https://api.hubapi.com/oauth/v1/token", {
+  const res = await fetch("https://api.hubapi.com/oauth/v3/token", {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({

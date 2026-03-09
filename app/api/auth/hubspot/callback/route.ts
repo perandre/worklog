@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     const redirectUri = `${origin}/api/auth/hubspot/callback`
 
     // Exchange code for tokens
-    const tokenRes = await fetch("https://api.hubapi.com/oauth/v1/token", {
+    const tokenRes = await fetch("https://api.hubapi.com/oauth/v3/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
       body: new URLSearchParams({
