@@ -68,6 +68,7 @@ export async function GET(request: NextRequest) {
       refreshToken: tokenData.refresh_token,
       expiresAt: Date.now() + tokenData.expires_in * 1000,
       portalId,
+      ownerId: String(info.user_id),
     }
 
     const encoded = encodeCookie(JSON.stringify(cookiePayload))
