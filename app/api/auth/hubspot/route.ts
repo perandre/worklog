@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
   authUrl.searchParams.set("scope", "crm.objects.deals.read")
   authUrl.searchParams.set("redirect_uri", redirectUri)
   authUrl.searchParams.set("state", state)
+  authUrl.searchParams.set("response_type", "code")
 
   return NextResponse.redirect(authUrl.toString())
 }
