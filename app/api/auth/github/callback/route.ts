@@ -6,13 +6,15 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code")
   const error = searchParams.get("error")
 
+  const origin = request.nextUrl.origin
+
   if (error) {
     console.error("GitHub OAuth error:", error)
-    return NextResponse.redirect(new URL("/?github_error=" + error, process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?github_error=" + error, origin))
   }
 
   if (!code) {
-    return NextResponse.redirect(new URL("/?github_error=no_code", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?github_error=no_code", origin))
   }
 
   try {
@@ -26,7 +28,7 @@ export async function GET(request: NextRequest) {
         client_id: process.env.GITHUB_CLIENT_ID!,
         client_secret: process.env.GITHUB_CLIENT_SECRET!,
         code,
-        redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/github/callback`,
+        redirect_uri: `${origin}/api/auth/github/callback`,
       }),
     })
 
@@ -34,14 +36,14 @@ export async function GET(request: NextRequest) {
 
     if (data.error) {
       console.error("GitHub token exchange error:", data.error)
-      return NextResponse.redirect(new URL("/?github_error=" + data.error, process.env.NEXTAUTH_URL))
+      return NextResponse.redirect(new URL("/?github_error=" + data.error, origin))
     }
 
     const accessToken = data.access_token
 
     if (!accessToken) {
       console.error("No access token in GitHub response")
-      return NextResponse.redirect(new URL("/?github_error=no_access_token", process.env.NEXTAUTH_URL))
+      return NextResponse.redirect(new URL("/?github_error=no_access_token", origin))
     }
 
     const cookieStore = await cookies()
@@ -55,9 +57,9 @@ export async function GET(request: NextRequest) {
 
     console.log("[GitHub] OAuth successful, token stored")
 
-    return NextResponse.redirect(new URL("/?github_connected=true", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?github_connected=true", origin))
   } catch (error) {
     console.error("GitHub OAuth error:", error)
-    return NextResponse.redirect(new URL("/?github_error=exchange_failed", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?github_error=exchange_failed", origin))
   }
 }

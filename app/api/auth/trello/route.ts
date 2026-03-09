@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const apiKey = process.env.TRELLO_API_KEY
   const appName = process.env.TRELLO_APP_NAME || "Worklog"
 
@@ -10,7 +10,7 @@ export async function GET() {
 
   // This URL must be on your domain and is where Trello will redirect
   // after the user approves the app. It can read the URL fragment client-side.
-  const returnUrl = `${process.env.NEXTAUTH_URL}/trello-auth-complete`
+  const returnUrl = `${request.nextUrl.origin}/trello-auth-complete`
 
   // Personal-token style authorization flow
   // Docs: https://developer.atlassian.com/cloud/trello/guides/rest-api/authorization/

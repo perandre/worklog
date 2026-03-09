@@ -6,13 +6,15 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code")
   const error = searchParams.get("error")
 
+  const origin = request.nextUrl.origin
+
   if (error) {
     console.error("Slack OAuth error:", error)
-    return NextResponse.redirect(new URL("/?slack_error=" + error, process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?slack_error=" + error, origin))
   }
 
   if (!code) {
-    return NextResponse.redirect(new URL("/?slack_error=no_code", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?slack_error=no_code", origin))
   }
 
   try {
@@ -24,7 +26,7 @@ export async function GET(request: NextRequest) {
         client_id: process.env.SLACK_CLIENT_ID!,
         client_secret: process.env.SLACK_CLIENT_SECRET!,
         code,
-        redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/slack/callback`,
+        redirect_uri: `${origin}/api/auth/slack/callback`,
       }),
     })
 
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     if (!data.ok) {
       console.error("Slack token exchange error:", data.error)
-      return NextResponse.redirect(new URL("/?slack_error=" + data.error, process.env.NEXTAUTH_URL))
+      return NextResponse.redirect(new URL("/?slack_error=" + data.error, origin))
     }
 
     // Get the user token (not bot token)
@@ -40,7 +42,7 @@ export async function GET(request: NextRequest) {
 
     if (!userToken) {
       console.error("No user token in Slack response")
-      return NextResponse.redirect(new URL("/?slack_error=no_user_token", process.env.NEXTAUTH_URL))
+      return NextResponse.redirect(new URL("/?slack_error=no_user_token", origin))
     }
 
     // Store token in HTTP-only cookie
@@ -55,9 +57,9 @@ export async function GET(request: NextRequest) {
 
     console.log("[Slack] OAuth successful, token stored")
 
-    return NextResponse.redirect(new URL("/?slack_connected=true", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?slack_connected=true", origin))
   } catch (error) {
     console.error("Slack OAuth error:", error)
-    return NextResponse.redirect(new URL("/?slack_error=exchange_failed", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?slack_error=exchange_failed", origin))
   }
 }

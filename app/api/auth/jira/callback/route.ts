@@ -7,9 +7,11 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get("state")
   const error = searchParams.get("error")
 
+  const origin = request.nextUrl.origin
+
   if (error) {
     console.error("[Jira] OAuth error:", error)
-    return NextResponse.redirect(new URL("/?jira_error=" + error, process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?jira_error=" + error, origin))
   }
 
   const cookieStore = await cookies()
@@ -17,13 +19,13 @@ export async function GET(request: NextRequest) {
 
   if (!state || state !== savedState) {
     console.error("[Jira] State mismatch")
-    return NextResponse.redirect(new URL("/?jira_error=state_mismatch", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?jira_error=state_mismatch", origin))
   }
 
   cookieStore.delete("jira_oauth_state")
 
   if (!code) {
-    return NextResponse.redirect(new URL("/?jira_error=no_code", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?jira_error=no_code", origin))
   }
 
   try {
@@ -36,14 +38,14 @@ export async function GET(request: NextRequest) {
         client_id: process.env.JIRA_CLIENT_ID!,
         client_secret: process.env.JIRA_CLIENT_SECRET!,
         code,
-        redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/jira/callback`,
+        redirect_uri: `${origin}/api/auth/jira/callback`,
       }),
     })
 
     if (!tokenRes.ok) {
       const body = await tokenRes.text()
       console.error("[Jira] Token exchange failed", tokenRes.status, body)
-      return NextResponse.redirect(new URL("/?jira_error=exchange_failed", process.env.NEXTAUTH_URL))
+      return NextResponse.redirect(new URL("/?jira_error=exchange_failed", origin))
     }
 
     const tokenData = await tokenRes.json()
@@ -55,13 +57,13 @@ export async function GET(request: NextRequest) {
 
     if (!resourcesRes.ok) {
       console.error("[Jira] Failed to fetch accessible resources", resourcesRes.status)
-      return NextResponse.redirect(new URL("/?jira_error=no_resources", process.env.NEXTAUTH_URL))
+      return NextResponse.redirect(new URL("/?jira_error=no_resources", origin))
     }
 
     const resources = await resourcesRes.json()
     if (!resources.length) {
       console.error("[Jira] No accessible Jira sites")
-      return NextResponse.redirect(new URL("/?jira_error=no_sites", process.env.NEXTAUTH_URL))
+      return NextResponse.redirect(new URL("/?jira_error=no_sites", origin))
     }
 
     const site = resources[0]
@@ -76,7 +78,7 @@ export async function GET(request: NextRequest) {
 
     console.log(`[Jira] OAuth successful, connected to ${site.name} (${site.url}), cookie length: ${encodedToken.length}`)
 
-    const response = NextResponse.redirect(new URL("/?jira_connected=true", process.env.NEXTAUTH_URL))
+    const response = NextResponse.redirect(new URL("/?jira_connected=true", origin))
     response.cookies.set("jira_token", encodedToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -87,6 +89,6 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error) {
     console.error("[Jira] OAuth error:", error)
-    return NextResponse.redirect(new URL("/?jira_error=exchange_failed", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?jira_error=exchange_failed", origin))
   }
 }

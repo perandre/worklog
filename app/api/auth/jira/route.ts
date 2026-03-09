@@ -1,14 +1,14 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const clientId = process.env.JIRA_CLIENT_ID
 
   if (!clientId) {
     return NextResponse.json({ error: "Jira not configured" }, { status: 500 })
   }
 
-  const redirectUri = `${process.env.NEXTAUTH_URL}/api/auth/jira/callback`
+  const redirectUri = `${request.nextUrl.origin}/api/auth/jira/callback`
   const state = crypto.randomUUID()
 
   const cookieStore = await cookies()

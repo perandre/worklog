@@ -12,16 +12,17 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const token = searchParams.get("token")
   const error = searchParams.get("error")
+  const origin = request.nextUrl.origin
 
   if (error) {
     console.error("Trello OAuth error:", error)
-    return NextResponse.redirect(new URL("/?trello_error=" + error, process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?trello_error=" + error, origin))
   }
 
   if (!token) {
     // In a real implementation, you might redirect to a page that can read the
     // fragment part of the URL and then call a POST endpoint with the token.
-    return NextResponse.redirect(new URL("/?trello_error=no_token", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?trello_error=no_token", origin))
   }
 
   try {
@@ -36,10 +37,10 @@ export async function GET(request: NextRequest) {
 
     console.log("[Trello] OAuth successful, token stored")
 
-    return NextResponse.redirect(new URL("/?trello_connected=true", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?trello_connected=true", origin))
   } catch (err) {
     console.error("Trello OAuth error:", err)
-    return NextResponse.redirect(new URL("/?trello_error=store_failed", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?trello_error=store_failed", origin))
   }
 }
 

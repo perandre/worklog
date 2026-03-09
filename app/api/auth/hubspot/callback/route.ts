@@ -8,9 +8,11 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get("state")
   const error = searchParams.get("error")
 
+  const origin = request.nextUrl.origin
+
   if (error) {
     console.error("[HubSpot] OAuth error:", error)
-    return NextResponse.redirect(new URL("/?hubspot_error=" + error, process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?hubspot_error=" + error, origin))
   }
 
   const cookieStore = await cookies()
@@ -18,17 +20,17 @@ export async function GET(request: NextRequest) {
 
   if (!state || state !== savedState) {
     console.error("[HubSpot] State mismatch")
-    return NextResponse.redirect(new URL("/?hubspot_error=state_mismatch", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?hubspot_error=state_mismatch", origin))
   }
 
   cookieStore.delete("hubspot_oauth_state")
 
   if (!code) {
-    return NextResponse.redirect(new URL("/?hubspot_error=no_code", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?hubspot_error=no_code", origin))
   }
 
   try {
-    const redirectUri = `${process.env.NEXTAUTH_URL}/api/auth/hubspot/callback`
+    const redirectUri = `${origin}/api/auth/hubspot/callback`
 
     // Exchange code for tokens
     const tokenRes = await fetch("https://api.hubapi.com/oauth/v1/token", {
@@ -46,7 +48,7 @@ export async function GET(request: NextRequest) {
     if (!tokenRes.ok) {
       const body = await tokenRes.text()
       console.error("[HubSpot] Token exchange failed", tokenRes.status, body)
-      return NextResponse.redirect(new URL("/?hubspot_error=exchange_failed", process.env.NEXTAUTH_URL))
+      return NextResponse.redirect(new URL("/?hubspot_error=exchange_failed", origin))
     }
 
     const tokenData = await tokenRes.json()
@@ -55,7 +57,7 @@ export async function GET(request: NextRequest) {
     const infoRes = await fetch(`https://api.hubapi.com/oauth/v1/access-tokens/${tokenData.access_token}`)
     if (!infoRes.ok) {
       console.error("[HubSpot] Failed to fetch token info", infoRes.status)
-      return NextResponse.redirect(new URL("/?hubspot_error=no_portal", process.env.NEXTAUTH_URL))
+      return NextResponse.redirect(new URL("/?hubspot_error=no_portal", origin))
     }
 
     const info = await infoRes.json()
@@ -71,7 +73,7 @@ export async function GET(request: NextRequest) {
     const encoded = encodeCookie(JSON.stringify(cookiePayload))
     console.log(`[HubSpot] OAuth successful, portal ${portalId}, cookie length: ${encoded.length}`)
 
-    const response = NextResponse.redirect(new URL("/?hubspot_connected=true", process.env.NEXTAUTH_URL))
+    const response = NextResponse.redirect(new URL("/?hubspot_connected=true", origin))
     response.cookies.set("hubspot_token", encoded, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -82,6 +84,6 @@ export async function GET(request: NextRequest) {
     return response
   } catch (err) {
     console.error("[HubSpot] OAuth error:", err)
-    return NextResponse.redirect(new URL("/?hubspot_error=exchange_failed", process.env.NEXTAUTH_URL))
+    return NextResponse.redirect(new URL("/?hubspot_error=exchange_failed", origin))
   }
 }
