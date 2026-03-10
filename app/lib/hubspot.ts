@@ -3,6 +3,8 @@ type HubSpotCookieData = {
   refreshToken: string
   expiresAt: number  // Unix ms
   portalId: number
+  ownerId?: string   // HubSpot CRM owner ID for deals
+  userId?: string    // HubSpot OAuth user ID for hs_updated_by_user_id filtering
 }
 
 export type HubSpotActivity = {
@@ -83,10 +85,23 @@ export async function getHubSpotActivitiesForDate(
   const { accessToken, updatedCookieData } = await getAccessToken(cookieData)
   const updatedTokenCookie = updatedCookieData ? encodeCookie(JSON.stringify(updatedCookieData)) : null
   const portalId = updatedCookieData?.portalId ?? cookieData.portalId
+  const ownerId = updatedCookieData?.ownerId ?? cookieData.ownerId
+  const userId = updatedCookieData?.userId ?? cookieData.userId
 
   try {
     const start = new Date(date + "T00:00:00.000Z").getTime()
     const end = new Date(date + "T23:59:59.999Z").getTime()
+
+    const filters: any[] = [{
+      propertyName: "hs_lastmodifieddate",
+      operator: "BETWEEN",
+      value: String(start),
+      highValue: String(end),
+    }]
+
+    if (ownerId) {
+      filters.push({ propertyName: "hubspot_owner_id", operator: "EQ", value: ownerId })
+    }
 
     const searchRes = await fetch("https://api.hubapi.com/crm/v3/objects/deals/search", {
       method: "POST",
@@ -95,15 +110,8 @@ export async function getHubSpotActivitiesForDate(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        filterGroups: [{
-          filters: [{
-            propertyName: "hs_lastmodifieddate",
-            operator: "BETWEEN",
-            value: String(start),
-            highValue: String(end),
-          }],
-        }],
-        properties: ["dealname", "dealstage", "hs_lastmodifieddate"],
+        filterGroups: [{ filters }],
+        properties: ["dealname", "dealstage", "hs_lastmodifieddate", "hs_updated_by_user_id"],
         limit: 100,
       }),
     })
@@ -115,17 +123,30 @@ export async function getHubSpotActivitiesForDate(
     }
 
     const searchData = await searchRes.json()
-    const results = searchData.results || []
-    console.log(`[HubSpot] ${results.length} deals modified on ${date}`)
+    let results = searchData.results || []
 
-    const activities: HubSpotActivity[] = results.map((deal: any) => ({
-      source: "hubspot" as const,
-      type: "deal" as const,
-      timestamp: new Date(deal.properties.hs_lastmodifieddate),
-      title: deal.properties.dealname || "Untitled deal",
-      detail: deal.properties.dealstage || undefined,
-      url: `https://app.hubspot.com/contacts/${portalId}/deal/${deal.id}`,
-    }))
+    // Filter to only deals the current user modified (not automation/colleagues)
+    if (userId) {
+      results = results.filter((deal: any) => deal.properties.hs_updated_by_user_id === userId)
+    }
+
+    console.log(`[HubSpot] ${results.length} deals modified by user on ${date}`)
+
+    // Known built-in stage labels; UUIDs and numeric IDs are custom pipeline stage IDs
+    const isReadableStage = (s: string) =>
+      s.length < 40 && !/^[0-9a-f-]{36}$/.test(s) && !/^\d+$/.test(s)
+
+    const activities: HubSpotActivity[] = results.map((deal: any) => {
+      const stage = deal.properties.dealstage
+      return {
+        source: "hubspot" as const,
+        type: "deal" as const,
+        timestamp: new Date(deal.properties.hs_lastmodifieddate),
+        title: deal.properties.dealname || "Untitled deal",
+        detail: stage && isReadableStage(stage) ? stage : undefined,
+        url: `https://app.hubspot.com/contacts/${portalId}/deal/${deal.id}`,
+      }
+    })
 
     return { activities, updatedTokenCookie }
   } catch (error) {
