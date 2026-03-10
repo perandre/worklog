@@ -228,6 +228,17 @@ export default function SuggestionCard({
           />
         </div>
 
+        {/* Internal note */}
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">{t("card.internalNote")}</label>
+          <textarea
+            className="w-full rounded-md border bg-background px-3 py-1.5 text-sm"
+            rows={2}
+            value={suggestion.internalNote ?? ""}
+            onChange={(e) => onUpdate({ internalNote: e.target.value || undefined })}
+          />
+        </div>
+
         {/* Reasoning */}
         <div className="space-y-1">
           <label className="text-xs text-muted-foreground">{t("card.basedOn")}</label>
