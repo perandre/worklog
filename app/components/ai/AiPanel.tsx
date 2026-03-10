@@ -173,7 +173,15 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
       }
       const data: AiSuggestionResponse = await sugRes.json()
 
-      setSuggestions(data.suggestions)
+      // Pre-populate projectMembershipId from the first role so multi-role projects
+      // don't get rejected by Milient ("User has more than one role on the project")
+      const enriched = data.suggestions.map((s) => {
+        if (s.projectMembershipId) return s
+        const project = ctx.projects.find((p) => p.id === s.projectId)
+        const firstRole = project?.roles?.[0]
+        return firstRole ? { ...s, projectMembershipId: firstRole.membershipId } : s
+      })
+      setSuggestions(enriched)
       setState("suggestions")
 
       // Auto-expand first suggestion
@@ -279,7 +287,7 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
           date,
           hours: s.hours,
           description: s.description,
-          internalNote: undefined,
+          internalNote: s.internalNote,
           projectMembershipId: membershipId,
         }
       })
