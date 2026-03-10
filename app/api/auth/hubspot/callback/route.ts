@@ -63,12 +63,26 @@ export async function GET(request: NextRequest) {
     const info = await infoRes.json()
     const portalId = info.hub_id
 
+    // Look up CRM owner ID (different from OAuth user_id) via Owners API
+    let ownerId: string | undefined
+    const ownerRes = await fetch(
+      `https://api.hubapi.com/crm/v3/owners/${info.user_id}?idProperty=userId`,
+      { headers: { Authorization: `Bearer ${tokenData.access_token}` } }
+    )
+    if (ownerRes.ok) {
+      const ownerData = await ownerRes.json()
+      ownerId = String(ownerData.id)
+      console.log(`[HubSpot] Resolved owner ID: ${ownerId} (userId: ${info.user_id})`)
+    } else {
+      console.warn("[HubSpot] Could not resolve owner ID", ownerRes.status)
+    }
+
     const cookiePayload = {
       accessToken: tokenData.access_token,
       refreshToken: tokenData.refresh_token,
       expiresAt: Date.now() + tokenData.expires_in * 1000,
       portalId,
-      ownerId: String(info.user_id),
+      ownerId,
     }
 
     const encoded = encodeCookie(JSON.stringify(cookiePayload))
