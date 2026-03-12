@@ -67,6 +67,8 @@ async function getAccessToken(
     refreshToken: data.refresh_token || cookieData.refreshToken,
     expiresAt: Date.now() + data.expires_in * 1000,
     portalId: cookieData.portalId,
+    ownerId: cookieData.ownerId,
+    userId: cookieData.userId,
   }
 
   console.log("[HubSpot] Token refreshed")
@@ -89,19 +91,28 @@ export async function getHubSpotActivitiesForDate(
   const userId = updatedCookieData?.userId ?? cookieData.userId
 
   try {
+    // Without userId we can't reliably filter to the current user's activity
+    if (!userId) {
+      console.warn("[HubSpot] No userId in cookie — skipping deal fetch (reconnect HubSpot to fix)")
+      return { activities: [], updatedTokenCookie }
+    }
+
     const start = new Date(date + "T00:00:00.000Z").getTime()
     const end = new Date(date + "T23:59:59.999Z").getTime()
 
-    const filters: any[] = [{
-      propertyName: "hs_lastmodifieddate",
-      operator: "BETWEEN",
-      value: String(start),
-      highValue: String(end),
-    }]
-
-    if (ownerId) {
-      filters.push({ propertyName: "hubspot_owner_id", operator: "EQ", value: ownerId })
-    }
+    const filters: any[] = [
+      {
+        propertyName: "hs_lastmodifieddate",
+        operator: "BETWEEN",
+        value: String(start),
+        highValue: String(end),
+      },
+      {
+        propertyName: "hs_updated_by_user_id",
+        operator: "EQ",
+        value: userId,
+      },
+    ]
 
     const searchRes = await fetch("https://api.hubapi.com/crm/v3/objects/deals/search", {
       method: "POST",
@@ -111,7 +122,7 @@ export async function getHubSpotActivitiesForDate(
       },
       body: JSON.stringify({
         filterGroups: [{ filters }],
-        properties: ["dealname", "dealstage", "hs_lastmodifieddate", "hs_updated_by_user_id"],
+        properties: ["dealname", "dealstage", "hs_lastmodifieddate"],
         limit: 100,
       }),
     })
@@ -123,12 +134,7 @@ export async function getHubSpotActivitiesForDate(
     }
 
     const searchData = await searchRes.json()
-    let results = searchData.results || []
-
-    // Filter to only deals the current user modified (not automation/colleagues)
-    if (userId) {
-      results = results.filter((deal: any) => deal.properties.hs_updated_by_user_id === userId)
-    }
+    const results = searchData.results || []
 
     console.log(`[HubSpot] ${results.length} deals modified by user on ${date}`)
 
