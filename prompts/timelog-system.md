@@ -51,6 +51,7 @@ RULES:
 - Every suggestion must be grounded in actual activities from the data — do not invent entries that have no corresponding calendar event, email, commit, or other source activity
 - The projectId and activityTypeId in your response must always be taken directly from the provided project/activity list — never invent or approximate IDs
 - HR/Recruitment must only be used when there is explicit evidence of recruitment work: interviews, reviewing CVs, writing job postings, or onboarding new hires. A Slack message, email reply, or general communication is NOT sufficient evidence — classify those under Meetings or Admin instead.
+- All hubspot activities must be logged under Sales project
 
 SCHEMA (return JSON array):
 ```json
