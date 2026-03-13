@@ -276,6 +276,14 @@ export default function AiPanel({ date, hours, onClose, onHighlight }: AiPanelPr
   const handleSubmit = useCallback(async () => {
     setState("submitting")
     try {
+      // Validate activity types belong to the correct project before sending
+      for (const s of approvedSuggestions) {
+        const actType = pmContext?.activityTypes.find((t) => t.id === s.activityTypeId)
+        if (actType && actType.projectId !== s.projectId) {
+          throw new Error(`"${actType.name}" does not belong to project "${s.projectName}" — please correct the activity type before submitting.`)
+        }
+      }
+
       const entries = approvedSuggestions.map((s) => {
         const project = pmContext?.projects.find((p) => p.id === s.projectId)
         const membershipId = s.projectMembershipId
