@@ -67,7 +67,7 @@ const translations = {
   // Suggestion Card
   "card.project": { en: "Project", no: "Prosjekt" },
   "card.hours": { en: "Hours", no: "Timer" },
-  "card.type": { en: "Type", no: "Type" },
+  "card.type": { en: "Activity", no: "Aktivitet" },
   "card.description": { en: "Description", no: "Beskrivelse" },
   "card.internalNote": { en: "Internal note", no: "Intern notat" },
   "card.basedOn": { en: "Based on", no: "Basert på" },
