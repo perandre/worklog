@@ -94,7 +94,7 @@ export class MilientPmAdapter implements PmAdapter {
         if (!topProjectIdSet.has(pid)) return // only top 20 projects
         const top3 = Array.from(typeCount.entries())
           .sort((a: [string, number], b: [string, number]) => b[1] - a[1])
-          .slice(0, 3)
+          .slice(0, 5)
           .map((entry: [string, number]) => entry[0])
         topActivityTypeIdsByProject.set(pid, top3)
       })
@@ -110,7 +110,7 @@ export class MilientPmAdapter implements PmAdapter {
       }
       const topTasksByActivityType = new Map<string, PmTask[]>()
       tasksByActivityType.forEach((tasks, tid) => {
-        topTasksByActivityType.set(tid, Array.from(tasks.values()).slice(0, 3))
+        topTasksByActivityType.set(tid, Array.from(tasks.values()).slice(0, 5))
       })
 
       return { topProjectIds, topActivityTypeIdsByProject, topTasksByActivityType }
@@ -184,7 +184,7 @@ export class MilientPmAdapter implements PmAdapter {
         allowedTypeIds.has(String(a.id)) &&
         a.projectExtensionState !== "closed"
       )
-      console.log(`[Milient] Activity types: ${allExtensions.length} total → ${filtered.length} selected (top 3/project across ${topActivityTypeIdsByProject.size} top-20 projects, last 30d)`)
+      console.log(`[Milient] Activity types: ${allExtensions.length} total → ${filtered.length} selected (top 5/project across ${topActivityTypeIdsByProject.size} top-20 projects, last 30d)`)
       return filtered.map((a: any) => ({
         id: String(a.id),
         name: a.name,
