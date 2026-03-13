@@ -42,6 +42,7 @@ export function parseSuggestions(jsonString: string): TimeLogSuggestion[] {
     activityTypeName: "",
     hours: roundToHalf(Number(item.hours) || 0.5),
     description: String(item.description || ""),
+    internalNote: item.internalNote ? String(item.internalNote) : undefined,
     confidence: validateConfidence(item.confidence),
     sourceActivities: Array.isArray(item.sourceActivities)
       ? item.sourceActivities.map((sa: any) => ({
