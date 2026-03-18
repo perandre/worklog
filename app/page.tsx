@@ -417,9 +417,9 @@ function WorklogApp() {
         )}
 
         {!serviceStatus.slack && !slackBannerDismissed && (
-          <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border bg-card p-4">
+          <div className="mb-6 flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-slack text-white">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-slack text-white">
                 <MessageSquare className="h-5 w-5" />
               </div>
               <div>
@@ -427,7 +427,7 @@ function WorklogApp() {
                 <p className="text-sm text-muted-foreground">{t("connect.slack.desc")}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end sm:self-auto">
               <Button asChild>
                 <a href="/api/auth/slack">{t("connect.button")}</a>
               </Button>
@@ -446,9 +446,9 @@ function WorklogApp() {
         )}
 
         {!serviceStatus.trello && !trelloBannerDismissed && (
-          <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border bg-card p-4">
+          <div className="mb-6 flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-trello text-white">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-trello text-white">
                 <span className="text-xs font-semibold">T</span>
               </div>
               <div>
@@ -456,7 +456,7 @@ function WorklogApp() {
                 <p className="text-sm text-muted-foreground">{t("connect.trello.desc")}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end sm:self-auto">
               <Button asChild>
                 <a href="/api/auth/trello">{t("connect.button")}</a>
               </Button>
@@ -475,9 +475,9 @@ function WorklogApp() {
         )}
 
         {!serviceStatus.github && !githubBannerDismissed && (
-          <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border bg-card p-4">
+          <div className="mb-6 flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-github text-white">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-github text-white">
                 <Github className="h-5 w-5" />
               </div>
               <div>
@@ -485,7 +485,7 @@ function WorklogApp() {
                 <p className="text-sm text-muted-foreground">{t("connect.github.desc")}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end sm:self-auto">
               <Button asChild>
                 <a href="/api/auth/github">{t("connect.button")}</a>
               </Button>
@@ -504,9 +504,9 @@ function WorklogApp() {
         )}
 
         {!serviceStatus.jira && !jiraBannerDismissed && (
-          <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border bg-card p-4">
+          <div className="mb-6 flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-jira text-white">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-jira text-white">
                 <Ticket className="h-5 w-5" />
               </div>
               <div>
@@ -514,7 +514,7 @@ function WorklogApp() {
                 <p className="text-sm text-muted-foreground">{t("connect.jira.desc")}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end sm:self-auto">
               <Button asChild>
                 <a href="/api/auth/jira">{t("connect.button")}</a>
               </Button>
@@ -533,9 +533,9 @@ function WorklogApp() {
         )}
 
         {!serviceStatus.hubspot && !hubspotBannerDismissed && (
-          <div className="mb-6 flex items-center justify-between gap-4 rounded-lg border bg-card p-4">
+          <div className="mb-6 flex flex-col gap-3 rounded-lg border bg-card p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#FF7A59] text-white">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-[#FF7A59] text-white">
                 <img src="/hubspot.svg" alt="HubSpot" className="h-5 w-5 invert" />
               </div>
               <div>
@@ -543,7 +543,7 @@ function WorklogApp() {
                 <p className="text-sm text-muted-foreground">{t("connect.hubspot.desc")}</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end sm:self-auto">
               <Button asChild>
                 <a href="/api/auth/hubspot">{t("connect.button")}</a>
               </Button>
@@ -608,7 +608,7 @@ function WorklogApp() {
       <footer className="border-t mt-auto">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge variant="default" className="cursor-pointer gap-1" onClick={() => signOut()}>
                 <CheckCircle2 className="h-3 w-3 text-green-400" /> Google <LogOut className="h-3 w-3" />
               </Badge>
