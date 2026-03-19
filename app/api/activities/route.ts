@@ -93,6 +93,8 @@ export async function GET(request: NextRequest) {
     const hours = processActivities(allActivities, 6, 23, timezone)
     const summary = getDaySummary(hours)
 
+    console.log(`[Activities] ${date} sources: cal=${calendarEvents.length} mail=${emails.length} docs=${docActivity.length} slack=${slackMessages.length} trello=${trelloActivities.length} github=${githubActivities.length} jira=${jiraActivities.length} hubspot=${hubspotActivities.length} | token: github=${!!githubToken}`)
+
     const response = NextResponse.json({
       date,
       hours,
