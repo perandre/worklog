@@ -52,12 +52,13 @@ export async function POST(request: NextRequest) {
       activityTypeName: activityMap.get(s.activityTypeId) ?? s.activityTypeId,
     }))
     const totalHours = suggestions.reduce((sum, s) => sum + s.hours, 0)
-    console.log(`[AI] ${suggestions.length} suggestions, ${totalHours}h total (${Date.now() - t0}ms)`)
+    const alreadyLogged = pmContext.existingRecords?.reduce((sum, r) => sum + r.hours, 0) ?? 0
+    console.log(`[AI] ${suggestions.length} suggestions, ${totalHours}h new + ${alreadyLogged}h already logged (${Date.now() - t0}ms)`)
 
     return NextResponse.json({
       suggestions,
       totalHours,
-      unaccountedMinutes: Math.max(0, (7.5 * 60) - (totalHours * 60)),
+      unaccountedMinutes: Math.max(0, (7.5 * 60) - ((totalHours + alreadyLogged) * 60)),
     })
   } catch (error: any) {
     console.error("Error generating suggestions:", error?.message || error)

@@ -25,8 +25,11 @@ export function assemblePrompt(data: PreprocessedData, pmContext: PmContext, dat
     })
     .join("\n")
 
-  const existingLogsList = pmContext.allocations.length > 0
-    ? pmContext.allocations.map((a) => `- ${a.projectName}: ${a.allocatedHours}h already logged`).join("\n")
+  const existingLogsList = pmContext.existingRecords.length > 0
+    ? pmContext.existingRecords.map((r) => {
+        const desc = r.description ? ` — ${r.description.replace(/\n/g, "; ")}` : ""
+        return `- ${r.projectName} / ${r.activityTypeName}: ${r.hours}h${desc}`
+      }).join("\n")
     : "No time logged yet today."
 
   const activityList = data.activities
@@ -43,8 +46,9 @@ DATE: ${date}
 PROJECTS AND ACTIVITY TYPES:
 ${projectList}
 
-ALREADY LOGGED TODAY (avoid double-logging):
+ALREADY LOGGED TODAY (DO NOT suggest these again):
 ${existingLogsList}
+${pmContext.existingRecords.length > 0 ? `\nTotal already logged: ${pmContext.existingRecords.reduce((s, r) => s + r.hours, 0)}h — only suggest the remaining ${Math.max(0, 7.5 - pmContext.existingRecords.reduce((s, r) => s + r.hours, 0))}h` : ""}
 
 TODAY'S ACTIVITIES:
 ${activityList}`

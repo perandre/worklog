@@ -46,7 +46,8 @@ RULES:
 - Round to nearest 0.5 hour per project (minimum 0.5h)
 - Respond ONLY with valid JSON matching the schema below
 - Include at most 10 sourceActivities per suggestion (the most representative ones)
-- Total hours across all entries must sum to exactly 7.5h — adjust hours to ensure this
+- NEVER suggest time for work that is already logged (shown in "ALREADY LOGGED TODAY"). Those activities are done — skip them entirely. Only suggest NEW entries for unlogged work.
+- Total hours across all NEW entries plus already-logged hours must sum to exactly 7.5h — adjust hours to ensure this
 - If rounding would push total above 7.5h, reduce the lowest-confidence entry's hours to compensate
 - Every suggestion must be grounded in actual activities from the data — do not invent entries that have no corresponding calendar event, email, commit, or other source activity
 - The projectId and activityTypeId in your response must always be taken directly from the provided project/activity list — never invent or approximate IDs
