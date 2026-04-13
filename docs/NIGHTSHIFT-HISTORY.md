@@ -5,6 +5,7 @@ bundle run. See https://github.com/perandre/night-shift for what each bundle doe
 
 ## Runs
 
+- 2026-04-13 audits     —  ok  2 PRs: CSRF state fix, HubSpot summary bug (PRs #17-#18)
 - 2026-04-13 docs       —  ok  changelog, docs refresh, 2 ADRs, 3 suggestions, digest (PRs #12-#16)
 - 2026-04-13 code-fixes —  silent  existing tests PR #11 still open
 - 2026-04-12 plans  —  work-on-issues  silent  no open issues labeled night-shift
