@@ -1,38 +1,34 @@
 # Improvement Suggestions
 
-Ideas for improving Worklog, discovered during codebase analysis.
+## 1. Extract reusable ConnectBanner component
 
----
-
-## 1. HubSpot activities missing from day summary counts
-
-**Why:** `getDaySummary()` in `aggregator.ts` counts meetings, Slack messages, emails, doc edits, Trello, GitHub, and Jira activities — but not HubSpot. This means the summary line at the top of the day view silently omits HubSpot deal activity. Users who rely on the summary to confirm "did my HubSpot data load?" have no signal.
+**Why:** `app/page.tsx` contains five nearly identical connection banner blocks (Slack, Trello, GitHub, Jira, HubSpot), each ~25 lines of duplicated JSX. Adding a new service means copying the block again. A single `<ConnectBanner service="slack" icon={...} />` component would eliminate ~100 lines of duplication and make adding future integrations trivial.
 
 **Effort:** S
 
 **Files involved:**
-- `app/lib/aggregator.ts` — add `totalHubSpotActivities` counter in `getDaySummary()`, mirror the pattern used for the other sources
+- `app/page.tsx` (lines 419–562 — the five banner blocks)
+- New: `app/components/ConnectBanner.tsx`
 
 ---
 
-## 2. Error recovery for failed AI suggestions
+## 2. Add HubSpot to getDaySummary counts
 
-**Why:** If the Gemini API call fails (rate limit, timeout, blocked prompt), the user sees an error but has no way to retry without regenerating from scratch. A simple "Retry" button that re-sends the same prompt would save time on transient failures, especially since the activity data and PM context are already fetched. This is a common pain point when working with external AI APIs.
+**Why:** `getDaySummary()` in `app/lib/aggregator.ts` counts activities from every source (calendar, slack, gmail, docs, trello, github, jira) except HubSpot. This means the summary object returned to the client is missing HubSpot activity counts, even though HubSpot activities are present in the hourly data. The inconsistency could confuse anyone building on top of the summary data.
 
 **Effort:** S
 
 **Files involved:**
-- `app/components/ai/AiPanel.tsx` — store the last prompt/context on failure, add a retry button that re-calls `/api/ai/suggest` with the same payload
-- `app/api/ai/suggest/route.ts` — no changes needed (already idempotent)
+- `app/lib/aggregator.ts` — `getDaySummary()` function (add `totalHubSpotActivities` counter)
 
 ---
 
-## 3. Split `page.tsx` into smaller components
+## 3. Surface source-level fetch errors to the user
 
-**Why:** `app/page.tsx` is over 800 lines and contains the entire app UI: date navigation, week view, day view, connection banners, service status, activity fetching, and AI panel orchestration. This makes it hard to reason about state flow and slows down development. Extracting the week view, day view, and connection banners into separate components would make each piece testable in isolation and reduce cognitive load when making changes.
+**Why:** When an individual source API fails (e.g., Slack token expired, Jira rate-limited), the error is caught silently in `app/api/activities/route.ts` and an empty array is returned. The user sees no activities from that source but has no indication that anything went wrong — it looks like a quiet day. Returning a `warnings` array alongside the data (e.g., `{ hours, summary, sources, warnings: ["Slack: token expired"] }`) would let the UI display a subtle indicator per source, helping users understand when data is missing vs. when they genuinely had no activity.
 
 **Effort:** M
 
 **Files involved:**
-- `app/page.tsx` — extract `WeekView`, `DayView`, `ConnectionBanners`, `ServiceStatusFooter` into `app/components/`
-- New files: `app/components/WeekView.tsx`, `app/components/DayView.tsx`, `app/components/ConnectionBanners.tsx`
+- `app/api/activities/route.ts` — capture error messages per source instead of silently swallowing
+- `app/page.tsx` — display warnings in the UI (e.g., a small alert or per-source icon indicator)
