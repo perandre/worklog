@@ -125,6 +125,7 @@ export function getDaySummary(hourlyData: Record<number, HourData>) {
   let totalTrelloActivities = 0
   let totalGitHubActivities = 0
   let totalJiraActivities = 0
+  let totalHubSpotActivities = 0
 
   for (const hourData of Object.values(hourlyData)) {
     totalMeetings += (hourData.primaries || []).filter((p: any) => !p.isSpanning).length
@@ -134,6 +135,7 @@ export function getDaySummary(hourlyData: Record<number, HourData>) {
     totalTrelloActivities += hourData.communications.filter((c) => c.source === "trello").length
     totalGitHubActivities += hourData.communications.filter((c) => c.source === "github").length
     totalJiraActivities += hourData.communications.filter((c) => c.source === "jira").length
+    totalHubSpotActivities += hourData.communications.filter((c) => c.source === "hubspot").length
   }
 
   return {
@@ -144,5 +146,6 @@ export function getDaySummary(hourlyData: Record<number, HourData>) {
     totalTrelloActivities,
     totalGitHubActivities,
     totalJiraActivities,
+    totalHubSpotActivities,
   }
 }
