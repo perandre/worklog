@@ -4,6 +4,7 @@ import { cookies } from "next/headers"
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const code = searchParams.get("code")
+  const state = searchParams.get("state")
   const error = searchParams.get("error")
 
   const origin = request.nextUrl.origin
@@ -12,6 +13,16 @@ export async function GET(request: NextRequest) {
     console.error("Slack OAuth error:", error)
     return NextResponse.redirect(new URL("/?slack_error=" + error, origin))
   }
+
+  const cookieStore = await cookies()
+  const savedState = cookieStore.get("slack_oauth_state")?.value
+
+  if (!state || state !== savedState) {
+    console.error("[Slack] State mismatch")
+    return NextResponse.redirect(new URL("/?slack_error=state_mismatch", origin))
+  }
+
+  cookieStore.delete("slack_oauth_state")
 
   if (!code) {
     return NextResponse.redirect(new URL("/?slack_error=no_code", origin))
@@ -46,7 +57,6 @@ export async function GET(request: NextRequest) {
     }
 
     // Store token in HTTP-only cookie
-    const cookieStore = await cookies()
     cookieStore.set("slack_token", userToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
