@@ -8,15 +8,22 @@
 - Slack DMs: No `#` prefix; channels get `#` prefix
 - Docs: Shows edit/create/delete/rename/move actions
 - Jira: Shows issue transitions (status changes) and comments; displays `issueKey: summary`
+- HubSpot: Shows deal activity; displays deal name with readable stage name (UUIDs and numeric IDs hidden)
 - Duration: Click to copy (shows checkmark feedback)
 
 ## AI Time Logging
 
 ### Suggestion Flow
-1. User clicks "Generate" → fetches `/api/ai/pm-context` (projects, activity types, allocations, time lock)
+1. User clicks "Generate" → fetches `/api/ai/pm-context` (projects, activity types, allocations, existing records, time lock)
 2. Then POST `/api/ai/suggest` with date, hours, pmContext
 3. Activities preprocessed → prompt assembled → Gemini generates suggestions
 4. User approves/edits individual suggestions → clicks "Submit" → POST `/api/ai/submit` → creates time records in Milient
+
+### Existing Records Deduplication
+- The pm-context endpoint fetches existing time records for the requested date
+- These are passed to the AI prompt as "ALREADY LOGGED TODAY" so the AI skips already-logged work
+- The remaining hours budget is adjusted: `7.5h - already_logged_hours`
+- This prevents duplicate suggestions when re-generating after partial submission
 
 ### Suggestion Caching
 - Cached per date in localStorage: `ai-suggestions:YYYY-MM-DD`
@@ -44,15 +51,18 @@
 - `projectExtensions` — activity types, tied to `projectId`
 - `projectMemberships` — user's project allocations (NOT `/allocations`, which doesn't exist)
 - `timeRecords` — create/read time entries
+- `tasks` — tasks per activity type (derived from recent time records, not fetched directly)
 
 ### Field Mapping (Suggestion → TimeRecord)
 - `projectId` → from matched project
 - `projectExtensionId` → from matched activity type
 - `userAccountId` → resolved from Google session email
 - `date` → YYYY-MM-DD
-- `hours` → decimal hours
-- `description` → invoice-ready text (Norwegian + English)
-- `internalNote` → internal context
+- `hours` → decimal hours (converted to minutes for API)
+- `description` → client-facing text for invoices
+- `internalNote` → technical detail for internal use
+- `projectMembershipId` → for multi-role projects
+- `taskId` → optional Milient task
 
 ## Drive Activity Notes
 
