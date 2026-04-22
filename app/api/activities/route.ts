@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
     const jiraActivities = jiraResult.activities || []
     const hubspotActivities = hubspotResult.activities || []
     const allActivities = [...calendarEvents, ...emails, ...docActivity, ...slackMessages, ...trelloActivities, ...githubActivities, ...jiraActivities, ...hubspotActivities]
-    const hours = processActivities(allActivities, 6, 23, timezone)
+    const hours = processActivities(allActivities, 0, 24, timezone)
     const summary = getDaySummary(hours)
 
     console.log(`[Activities] ${date} sources: cal=${calendarEvents.length} mail=${emails.length} docs=${docActivity.length} slack=${slackMessages.length} trello=${trelloActivities.length} github=${githubActivities.length} jira=${jiraActivities.length} hubspot=${hubspotActivities.length} | token: github=${!!githubToken}`)

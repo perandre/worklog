@@ -702,7 +702,7 @@ function DayView({ data, highlightedActivities }: { data: any; highlightedActivi
   return (
     <div className="max-w-2xl mx-auto">
       <div className="space-y-2">
-        {Array.from({ length: 17 }, (_, i) => i + 6).map((hour) => {
+        {Array.from({ length: 24 }, (_, i) => i).map((hour) => {
           const hourData = data.hours[hour] || { primaries: [], communications: [] }
           const isEmpty = (!hourData.primaries?.length) && !hourData.communications?.length
           if (isEmpty) return null
@@ -743,7 +743,7 @@ function WeekView({ weekData, today, locale, onDayClick }: { weekData: any[]; to
             {date === today && <Badge variant="secondary">{t("week.today")}</Badge>}
           </div>
           <div className="space-y-1.5">
-            {Array.from({ length: 17 }, (_, i) => i + 6).map((hour) => {
+            {Array.from({ length: 24 }, (_, i) => i).map((hour) => {
               const hourData = data.hours?.[hour] || { primaries: [], communications: [] }
               const isEmpty = (!hourData.primaries?.length) && !hourData.communications?.length
               if (isEmpty) return null
