@@ -699,13 +699,20 @@ function DayView({ data, highlightedActivities }: { data: any; highlightedActivi
     return highlightedActivities.has(`${activity.source}-${activity.timestamp}`)
   }
 
+  const allHours = Array.from({ length: 24 }, (_, i) => i)
+  const nonEmpty = allHours.filter((h) => {
+    const hd = data.hours[h]
+    return hd && ((hd.primaries?.length || 0) > 0 || (hd.communications?.length || 0) > 0)
+  })
+  const firstHour = nonEmpty.length ? nonEmpty[0] : 0
+  const lastHour = nonEmpty.length ? nonEmpty[nonEmpty.length - 1] : -1
+  const visibleHours = lastHour >= firstHour ? allHours.slice(firstHour, lastHour + 1) : []
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="space-y-2">
-        {Array.from({ length: 24 }, (_, i) => i).map((hour) => {
+        {visibleHours.map((hour) => {
           const hourData = data.hours[hour] || { primaries: [], communications: [] }
-          const isEmpty = (!hourData.primaries?.length) && !hourData.communications?.length
-          if (isEmpty) return null
           return (
             <div key={hour} className="flex gap-4">
               <div className="w-14 shrink-0 text-right text-sm text-muted-foreground pt-3">
@@ -736,17 +743,24 @@ function WeekView({ weekData, today, locale, onDayClick }: { weekData: any[]; to
   return (
     <div className="overflow-x-auto pb-4">
     <div className="grid grid-cols-7 gap-3 min-w-[1400px]">
-      {weekData.map(({ date, data }) => (
+      {weekData.map(({ date, data }) => {
+        const allHours = Array.from({ length: 24 }, (_, i) => i)
+        const nonEmpty = allHours.filter((h) => {
+          const hd = data.hours?.[h]
+          return hd && ((hd.primaries?.length || 0) > 0 || (hd.communications?.length || 0) > 0)
+        })
+        const firstHour = nonEmpty.length ? nonEmpty[0] : 0
+        const lastHour = nonEmpty.length ? nonEmpty[nonEmpty.length - 1] : -1
+        const visibleHours = lastHour >= firstHour ? allHours.slice(firstHour, lastHour + 1) : []
+        return (
         <div key={date} className="min-w-0">
           <div className="flex items-center gap-2 mb-3">
             <button onClick={() => onDayClick(date)} className="font-medium text-sm hover:underline hover:text-foreground text-muted-foreground transition-colors">{formatDate(date, locale)}</button>
             {date === today && <Badge variant="secondary">{t("week.today")}</Badge>}
           </div>
           <div className="space-y-1.5">
-            {Array.from({ length: 24 }, (_, i) => i).map((hour) => {
+            {visibleHours.map((hour) => {
               const hourData = data.hours?.[hour] || { primaries: [], communications: [] }
-              const isEmpty = (!hourData.primaries?.length) && !hourData.communications?.length
-              if (isEmpty) return null
               return (
                 <div key={hour} className="flex gap-1.5">
                   <div className="w-10 shrink-0 text-right text-xs text-muted-foreground pt-2">
@@ -769,7 +783,8 @@ function WeekView({ weekData, today, locale, onDayClick }: { weekData: any[]; to
             })}
           </div>
         </div>
-      ))}
+        )
+      })}
     </div>
     </div>
   )
