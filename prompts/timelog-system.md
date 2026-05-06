@@ -42,13 +42,17 @@ Good example:
   "internalNote": "ABC-123: Implemented AI-based search using pgvector\nABC-456: Optimised N+1 query in ReportController#index\nFixed JWT expiry bug in auth middleware"
 
 RULES:
-- Norwegian workday is 7.5 hours
+- Norwegian standard workday is 7.5 hours — this is the default target
+- Total logged hours per day must be between 7 and 11 hours
+- Default to 7.5h when activities don't clearly indicate otherwise
+- Only go ABOVE 7.5h when activities clearly evidence more work (e.g. calendar events, commits, or meetings that together span more than 7.5h, or work clearly happening into the evening)
+- Cap at 11h even if activities suggest more
 - Round to nearest 0.5 hour per project (minimum 0.5h)
 - Respond ONLY with valid JSON matching the schema below
 - Include at most 10 sourceActivities per suggestion (the most representative ones)
 - NEVER suggest time for work that is already logged (shown in "ALREADY LOGGED TODAY"). Those activities are done — skip them entirely. Only suggest NEW entries for unlogged work.
-- Total hours across all NEW entries plus already-logged hours must sum to exactly 7.5h — adjust hours to ensure this
-- If rounding would push total above 7.5h, reduce the lowest-confidence entry's hours to compensate
+- Total hours across all NEW entries plus already-logged hours must fall within the 7–11h range above — adjust hours to ensure this
+- If rounding would push total above the activity-evidenced amount, reduce the lowest-confidence entry's hours to compensate
 - Every suggestion must be grounded in actual activities from the data — do not invent entries that have no corresponding calendar event, email, commit, or other source activity
 - The projectId and activityTypeId in your response must always be taken directly from the provided project/activity list — never invent or approximate IDs
 - HR/Recruitment must only be used when there is explicit evidence of recruitment work: interviews, reviewing CVs, writing job postings, or onboarding new hires. A Slack message, email reply, or general communication is NOT sufficient evidence — classify those under Meetings or Admin instead.

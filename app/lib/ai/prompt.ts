@@ -48,7 +48,7 @@ ${projectList}
 
 ALREADY LOGGED TODAY (DO NOT suggest these again):
 ${existingLogsList}
-${pmContext.existingRecords.length > 0 ? `\nTotal already logged: ${pmContext.existingRecords.reduce((s, r) => s + r.hours, 0)}h — only suggest the remaining ${Math.max(0, 7.5 - pmContext.existingRecords.reduce((s, r) => s + r.hours, 0))}h` : ""}
+${pmContext.existingRecords.length > 0 ? `\nTotal already logged: ${pmContext.existingRecords.reduce((s, r) => s + r.hours, 0)}h — suggest enough new entries to bring the total to at least 7.5h, and up to 11h if activities clearly indicate more work` : ""}
 
 TODAY'S ACTIVITIES:
 ${activityList}`
