@@ -1,0 +1,9 @@
+{
+  "$schema": "https://docs.fallow.tools/schema/fallow.schema.json",
+  "entry": [
+    "app/**/__tests__/**/*.{ts,tsx}",
+    "app/**/*.test.{ts,tsx}",
+    "lib/**/__tests__/**/*.{ts,tsx}",
+    "lib/**/*.test.{ts,tsx}"
+  ]
+}
