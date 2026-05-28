@@ -1,5 +1,7 @@
 # Worklog
 
+[![CI](https://github.com/perandre/worklog/actions/workflows/ci.yml/badge.svg)](https://github.com/perandre/worklog/actions/workflows/ci.yml)
+
 AI-powered time logging for consultants. Aggregates your day hour-by-hour from Google, Slack, Trello, GitHub, Jira, and HubSpot — then uses AI to generate ready-to-submit time entries mapped to your projects in Milient/Moment.
 
 Built with Next.js 14, shadcn/ui, Tailwind CSS, and Google Gemini. No database. Supports dark mode.
@@ -17,6 +19,20 @@ npm install
 cp .env.example .env.local  # Fill in your credentials
 npm run dev                  # Open http://localhost:3000
 ```
+
+## Development
+
+```bash
+npm run dev          # Dev server
+npm run lint         # ESLint
+npm run typecheck    # tsc --noEmit
+npm test             # Vitest
+```
+
+Git hooks (installed by `npm install`) lint staged files on commit and run the
+typecheck + tests on push. CI runs the same checks on every PR. See
+[CONTRIBUTING.md](./CONTRIBUTING.md) for the workflow and [AGENTS.md](./AGENTS.md)
+for the full development guide.
 
 ## Environment Variables
 
