@@ -38,7 +38,7 @@ for the full development guide.
 
 ```
 # NextAuth
-NEXTAUTH_URL=https://your-app.vercel.app
+NEXTAUTH_URL=https://worklog.frontkom.com
 NEXTAUTH_SECRET=generate-a-random-secret
 
 # Google OAuth (Calendar, Gmail, Drive Activity)
@@ -137,9 +137,11 @@ Milient is a time management platform used by Norwegian consulting firms. The ap
 
 1. Push to GitHub
 2. Import the project at [vercel.com](https://vercel.com)
-3. Add all environment variables (set `NEXTAUTH_URL` to your Vercel domain)
+3. Add all environment variables (set `NEXTAUTH_URL` to your production domain)
 4. Deploy
-5. Update all OAuth redirect URIs to your Vercel domain
+5. Add your custom domain in Vercel → Settings → Domains, then point its DNS at
+   Vercel (see [docs/CALLBACK-URLS.md](./docs/CALLBACK-URLS.md))
+6. Update all OAuth redirect URIs to your production domain
 
 ## Tech Stack
 

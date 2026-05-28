@@ -2,7 +2,9 @@
 
 Quick reference for where to update callback/redirect URLs when the domain changes.
 
-**Production callback pattern:** `https://<YOUR_DOMAIN>/api/auth/<service>/callback`
+**Production domain:** `worklog.frontkom.com`
+
+**Production callback pattern:** `https://worklog.frontkom.com/api/auth/<service>/callback`
 
 ---
 
