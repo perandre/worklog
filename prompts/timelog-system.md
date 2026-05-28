@@ -50,6 +50,7 @@ RULES:
 - Round to nearest 0.5 hour per project (minimum 0.5h)
 - Respond ONLY with valid JSON matching the schema below
 - Include at most 10 sourceActivities per suggestion (the most representative ones)
+- One entry per (projectId + activityTypeId) combination — never create two entries with the same project and activity type. Merge all evidence into a single entry. Do NOT emit one entry per commit, email, or calendar event.
 - NEVER suggest time for work that is already logged (shown in "ALREADY LOGGED TODAY"). Those activities are done — skip them entirely. Only suggest NEW entries for unlogged work.
 - Total hours across all NEW entries plus already-logged hours must fall within the 7–11h range above — adjust hours to ensure this
 - If rounding would push total above the activity-evidenced amount, reduce the lowest-confidence entry's hours to compensate

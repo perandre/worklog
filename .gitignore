@@ -12,6 +12,8 @@ out/
 
 # Debug
 npm-debug.log*
+firebase-debug.log*
+*.log
 
 # IDE
 .idea/

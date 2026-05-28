@@ -111,7 +111,7 @@ export default function AboutPage() {
             You had a productive day. Back-to-back meetings, a long email thread, three code reviews, half a dozen Slack threads, and two Jira tickets closed. Then 4:55 PM arrives and your time-tracking system is just… waiting. Blinking cursor, empty rows.
           </p>
           <p className="text-lg text-muted-foreground leading-relaxed mt-4">
-            Worklog is the missing piece. It collects everything you did, lays it out hour by hour, and uses AI to translate it into billable time entries — mapped to the right projects and activity types, with descriptions you'd actually write yourself.
+            Worklog is the missing piece. It collects everything you did, lays it out hour by hour, and uses AI to translate it into billable time entries — mapped to the right projects and activity types, with descriptions you&apos;d actually write yourself.
           </p>
         </header>
 
@@ -146,7 +146,7 @@ export default function AboutPage() {
           </div>
 
           <p className="text-sm text-muted-foreground mt-5 leading-relaxed">
-            Google Calendar events are <em>primaries</em> — the anchor points of each hour. Everything else (emails, messages, commits) is a <em>communication</em>, shown alongside but capped at six per hour so the view doesn't turn into a wall of noise. Emails are also deduplicated by thread, so a long back-and-forth shows up as one item.
+            Google Calendar events are <em>primaries</em> — the anchor points of each hour. Everything else (emails, messages, commits) is a <em>communication</em>, shown alongside but capped at six per hour so the view doesn&apos;t turn into a wall of noise. Emails are also deduplicated by thread, so a long back-and-forth shows up as one item.
           </p>
         </section>
 
@@ -159,7 +159,7 @@ export default function AboutPage() {
             How it works
           </h2>
           <p className="text-muted-foreground leading-relaxed mb-6">
-            This is where the interesting stuff happens. Here's the full journey from "you pick a date" to "here's your timelog."
+            This is where the interesting stuff happens. Here&apos;s the full journey from &quot;you pick a date&quot; to &quot;here&apos;s your timelog.&quot;
           </p>
 
           <div className="space-y-6">
@@ -171,7 +171,7 @@ export default function AboutPage() {
               <div className="pb-6">
                 <h3 className="font-semibold mb-1.5">Parallel fetch</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  All seven sources are queried simultaneously. Each has its own OAuth token stored as a secure HTTP-only cookie. Google uses NextAuth's JWT; Jira stores only the refresh token (access tokens are too big for cookies) and fetches a fresh one per request.
+                  All seven sources are queried simultaneously. Each has its own OAuth token stored as a secure HTTP-only cookie. Google uses NextAuth&apos;s JWT; Jira stores only the refresh token (access tokens are too big for cookies) and fetches a fresh one per request.
                 </p>
               </div>
             </div>
@@ -197,7 +197,7 @@ export default function AboutPage() {
               <div className="pb-6">
                 <h3 className="font-semibold mb-1.5">PM context fetch</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  When you click Generate, the app pulls your project context from the time-tracking system: the 20 projects you've used most in the last 14 days, the top 3 activity types per project, your hour allocations for the day, any existing time records, and the time-lock date (logged hours before that date are untouchable).
+                  When you click Generate, the app pulls your project context from the time-tracking system: the 20 projects you&apos;ve used most in the last 14 days, the top 3 activity types per project, your hour allocations for the day, any existing time records, and the time-lock date (logged hours before that date are untouchable).
                 </p>
               </div>
             </div>
@@ -222,7 +222,7 @@ export default function AboutPage() {
               <div>
                 <h3 className="font-semibold mb-1.5">Review and submit</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  You see the suggestions, edit anything that looks off, and hit Submit. Each entry is validated server-side against the time-lock before being written to your time-tracking system. The suggestions are cached in localStorage per date so a page refresh doesn't throw away your work.
+                  You see the suggestions, edit anything that looks off, and hit Submit. Each entry is validated server-side against the time-lock before being written to your time-tracking system. The suggestions are cached in localStorage per date so a page refresh doesn&apos;t throw away your work.
                 </p>
               </div>
             </div>
@@ -247,7 +247,7 @@ export default function AboutPage() {
               <div>
                 <h3 className="font-semibold mb-1">Milient / Moment</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Milient (also known as Moment) is a time management platform widely used by Norwegian consulting firms. Worklog uses it as the source of truth for projects, activity types, hour allocations, and as the destination for submitted time records. Your user account is resolved dynamically from your Google sign-in email, so there's no separate login.
+                  Milient (also known as Moment) is a time management platform widely used by Norwegian consulting firms. Worklog uses it as the source of truth for projects, activity types, hour allocations, and as the destination for submitted time records. Your user account is resolved dynamically from your Google sign-in email, so there&apos;s no separate login.
                 </p>
               </div>
             </div>

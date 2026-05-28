@@ -1,5 +1,7 @@
 # Worklog
 
+[![CI](https://github.com/perandre/worklog/actions/workflows/ci.yml/badge.svg)](https://github.com/perandre/worklog/actions/workflows/ci.yml)
+
 AI-powered time logging for consultants. Aggregates your day hour-by-hour from Google, Slack, Trello, GitHub, Jira, and HubSpot — then uses AI to generate ready-to-submit time entries mapped to your projects in Milient/Moment.
 
 Built with Next.js 14, shadcn/ui, Tailwind CSS, and Google Gemini. No database. Supports dark mode.
@@ -18,11 +20,25 @@ cp .env.example .env.local  # Fill in your credentials
 npm run dev                  # Open http://localhost:3000
 ```
 
+## Development
+
+```bash
+npm run dev          # Dev server
+npm run lint         # ESLint
+npm run typecheck    # tsc --noEmit
+npm test             # Vitest
+```
+
+Git hooks (installed by `npm install`) lint staged files on commit and run the
+typecheck + tests on push. CI runs the same checks on every PR. See
+[CONTRIBUTING.md](./CONTRIBUTING.md) for the workflow and [AGENTS.md](./AGENTS.md)
+for the full development guide.
+
 ## Environment Variables
 
 ```
 # NextAuth
-NEXTAUTH_URL=https://your-app.vercel.app
+NEXTAUTH_URL=https://worklog.frontkom.com
 NEXTAUTH_SECRET=generate-a-random-secret
 
 # Google OAuth (Calendar, Gmail, Drive Activity)
@@ -121,9 +137,11 @@ Milient is a time management platform used by Norwegian consulting firms. The ap
 
 1. Push to GitHub
 2. Import the project at [vercel.com](https://vercel.com)
-3. Add all environment variables (set `NEXTAUTH_URL` to your Vercel domain)
+3. Add all environment variables (set `NEXTAUTH_URL` to your production domain)
 4. Deploy
-5. Update all OAuth redirect URIs to your Vercel domain
+5. Add your custom domain in Vercel → Settings → Domains, then point its DNS at
+   Vercel (see [docs/CALLBACK-URLS.md](./docs/CALLBACK-URLS.md))
+6. Update all OAuth redirect URIs to your production domain
 
 ## Tech Stack
 
