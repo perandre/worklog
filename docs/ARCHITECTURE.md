@@ -2,7 +2,7 @@
 
 ## Overview
 
-Worklog — a summary of your day. Shows hour-by-hour activity from Google (Calendar, Gmail, Docs), Slack, Trello, GitHub, Jira Cloud, and HubSpot. AI-powered time logging via Gemini + Milient/Moment integration.
+Worklog — a summary of your day. Shows hour-by-hour activity from Google (Calendar, Gmail, Docs), Slack, Trello, GitHub, Jira, and HubSpot. AI-powered time logging via Gemini + Milient/Moment integration.
 
 ## Tech Stack
 
@@ -26,16 +26,15 @@ app/
 │   │   ├── trello/                    # Trello OAuth
 │   │   ├── github/                    # GitHub OAuth
 │   │   ├── jira/                      # Jira Cloud OAuth 2.0 (3LO)
-│   │   └── hubspot/                   # HubSpot OAuth (connect/callback/disconnect)
+│   │   └── hubspot/                   # HubSpot OAuth
 │   ├── activities/route.ts            # GET /api/activities?date=YYYY-MM-DD
 │   ├── status/route.ts                # GET /api/status (auth required)
 │   └── ai/
-│       ├── pm-context/route.ts        # GET - projects, activity types, allocations, time lock
+│       ├── pm-context/route.ts        # GET - projects, activity types, allocations, existing records, time lock
 │       ├── suggest/route.ts           # POST - generate AI suggestions via Gemini
 │       └── submit/route.ts            # POST - submit time logs to Milient
 ├── components/
 │   ├── Activity.tsx                   # Activity item with source icons
-│   ├── WelcomePage.tsx                # Unauthenticated landing page
 │   └── ai/
 │       ├── AiPanel.tsx                # AI time logging sidebar
 │       ├── SuggestionCard.tsx         # Individual suggestion card
@@ -47,11 +46,11 @@ app/
 │   ├── trello.ts                      # Trello board/card activity
 │   ├── github.ts                      # GitHub commits + events
 │   ├── jira.ts                        # Jira Cloud issue transitions + comments
-│   ├── hubspot.ts                     # HubSpot deal activity via CRM Search API
+│   ├── hubspot.ts                     # HubSpot deal activity + OAuth helpers
 │   ├── aggregator.ts                  # Hour bucketing logic
 │   ├── milient.ts                     # Milient API client + cache
 │   ├── i18n.tsx                       # Translations (NO/EN)
-│   ├── version.ts                     # Version from package.json
+│   ├── version.ts                     # App version from package.json
 │   ├── ai/
 │   │   ├── adapter.ts                 # AiAdapter interface
 │   │   ├── index.ts                   # Factory → GeminiAdapter
@@ -64,7 +63,7 @@ app/
 │   │   ├── index.ts                   # Factory → MilientPmAdapter
 │   │   └── milient.ts                 # Milient PM adapter
 │   └── types/
-│       ├── pm.ts                      # PmProject, PmTask, PmActivityType, PmContext
+│       ├── pm.ts                      # PmProject, PmActivityType, PmContext
 │       └── timelog.ts                 # TimeLogSuggestion, TimeLogSubmission
 ├── globals.css                        # Tailwind + shadcn CSS variables
 ├── layout.tsx                         # Root layout with dark mode
@@ -86,12 +85,10 @@ prompts/timelog-system.md              # Editable AI system prompt
 5. Returns `{ hours, summary, sources }`
 
 ### AI Time Logging
-1. User clicks "Generate" → fetches `/api/ai/pm-context` (projects, activity types, allocations, time lock)
+1. User clicks "Generate" → fetches `/api/ai/pm-context` (projects, activity types, allocations, existing records, time lock)
 2. Then POST `/api/ai/suggest` with date, hours, pmContext
-3. Activities preprocessed → prompt assembled → Gemini generates suggestions
-4. Suggestions now include a client-facing `description` and an optional `internalNote` for technical context
-5. User approves/edits → POST `/api/ai/submit` → creates time records in Milient
-6. Already-logged Milient records are excluded from AI suggestions to prevent duplicates
+3. Activities preprocessed → prompt assembled (includes "ALREADY LOGGED TODAY" section listing existing records) → Gemini generates suggestions for remaining hours only
+4. User approves/edits → POST `/api/ai/submit` → creates time records in Milient
 
 ## Auth
 
@@ -112,9 +109,8 @@ prompts/timelog-system.md              # Editable AI system prompt
 ### HubSpot (OAuth 2.0)
 - Scope: `crm.objects.deals.read`
 - Short-lived access tokens (30 min) + long-lived refresh tokens
-- Cookie stores base64-encoded: `{ accessToken, refreshToken, expiresAt, portalId, ownerId, userId }`
-- Token refresh via `POST https://api.hubapi.com/oauth/v3/token`
-- Deals filtered by `hs_updated_by_user_id` to show only the current user's activity
+- Cookie stores: `{ accessToken, refreshToken, expiresAt, portalId, ownerId, userId }` in base64
+- Deals filtered by `hs_updated_by_user_id` to show only the current user's changes
 
 ## Caching
 
@@ -139,4 +135,4 @@ npm install
 npm run dev  # http://localhost:3000
 ```
 
-Note: Slack and HubSpot OAuth require HTTPS. For local testing, use `next dev --experimental-https` or deploy to Vercel first.
+Note: Slack OAuth requires HTTPS. For local Slack testing, use ngrok or deploy to Vercel first.
